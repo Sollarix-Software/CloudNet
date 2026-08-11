@@ -1,0 +1,39 @@
+name: Sollarix Verify
+
+on:
+  pull_request:
+    branches: [sollarix]
+  push:
+    branches: [sollarix]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sollarix-verify-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: zulu
+          java-version: "25"
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v5
+        with:
+          cache-read-only: ${{ github.event_name == 'pull_request' }}
+      - name: Build and test
+        run: ./gradlew build --no-daemon --stacktrace
+      - name: Publish test summary
+        if: always()
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          files: "**/build/test-results/test/TEST-*.xml"
+          comment_mode: "off"
