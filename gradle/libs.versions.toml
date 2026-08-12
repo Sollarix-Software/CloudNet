@@ -64,7 +64,7 @@ nukkitX = "1.0-SNAPSHOT"
 minestom = "2026.01.01-1.21.11"
 minestomExtensions = "1.2.0"
 spigot = "1.8.8-R0.1-SNAPSHOT"
-bungeecord = "1.21-R0.5-SNAPSHOT"
+bungeecord = "1.21-R0.4"
 limboloohp = "0.7.9-ALPHA"
 
 # platform extensions
