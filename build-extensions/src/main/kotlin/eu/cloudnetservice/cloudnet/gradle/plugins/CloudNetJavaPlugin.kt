@@ -101,6 +101,7 @@ private fun Project.addDefaultRepositories() {
   repositories {
     mavenCentral().releasesOnly()
     maven("https://central.sonatype.com/repository/maven-snapshots/").snapshotsOnly()
+    maven("https://repo.md-5.net/content/repositories/snapshots/").snapshotsOnly()
 
     // ensure that we use these repositories for snapshots/releases only (improves lookup times)
     maven("https://repository.derklaro.dev/releases/").releasesOnly()
