@@ -5,6 +5,7 @@ Every core patch must be listed before it is merged into `sollarix`.
 | Patch | Upstream issue | Reason | Modules | Upstreamable | Status |
 |---|---|---|---|---|---|
 | Pin available BungeeCord Chat release | Not filed; [reproducer](https://github.com/Sollarix-Software/CloudNet/actions/runs/31604710665) | RC16 requests the deleted `1.21-R0.5-SNAPSHOT`; Maven Central retains compatible `1.21-R0.4` | `gradle` catalog, `ext:adventure-helper` | Yes | CI validation |
+| Pin LocalStack test image | Not filed; [reproducer](https://github.com/Sollarix-Software/CloudNet/actions/runs/31605865131) | `latest` changed incompatibly and exits before the expected readiness marker; RC16 test baseline uses `3.8.1` | `modules:storage-s3:impl` tests | Yes | CI validation |
 
 ## Patch requirements
 
