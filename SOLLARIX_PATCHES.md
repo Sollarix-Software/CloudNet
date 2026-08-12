@@ -4,7 +4,7 @@ Every core patch must be listed before it is merged into `sollarix`.
 
 | Patch | Upstream issue | Reason | Modules | Upstreamable | Status |
 |---|---|---|---|---|---|
-| Restore md-5 snapshots repository | Not filed; [reproducer](https://github.com/Sollarix-Software/CloudNet/actions/runs/31517496124) | RC16 requests `net.md-5:bungeecord-chat:1.21-R0.5-SNAPSHOT`, which is absent from its configured repositories | `build-extensions`, `ext:adventure-helper` | Yes | CI validation |
+| Pin available BungeeCord Chat release | Not filed; [reproducer](https://github.com/Sollarix-Software/CloudNet/actions/runs/31604710665) | RC16 requests the deleted `1.21-R0.5-SNAPSHOT`; Maven Central retains compatible `1.21-R0.4` | `gradle` catalog, `ext:adventure-helper` | Yes | CI validation |
 
 ## Patch requirements
 
