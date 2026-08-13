@@ -60,7 +60,7 @@ jobs:
 
       - name: Publish updater metadata
         uses: s0/git-publish-subdir-action@develop
-        if: ${{ github.event_name != 'pull_request' && !startsWith(github.ref, 'refs/heads/renovate/') }}
+        if: ${{ github.repository == 'CloudNetService/CloudNet' && github.event_name != 'pull_request' && !startsWith(github.ref, 'refs/heads/renovate/') }}
         env:
           REPO: git@github.com:CloudNetService/launchermeta.git
           BRANCH: ${{ steps.branch-name.outputs.current_branch }}
@@ -80,7 +80,7 @@ jobs:
           fi
 
       - name: Publish snapshot to central portal
-        if: ${{ github.event_name == 'push' && env.STATUS != 'release' && startsWith(github.ref, 'refs/heads/nightly') }}
+        if: ${{ github.repository == 'CloudNetService/CloudNet' && github.event_name == 'push' && env.STATUS != 'release' && startsWith(github.ref, 'refs/heads/nightly') }}
         run: ./gradlew publish --no-daemon
         env:
           CENTRAL_USER: "${{ secrets.CENTRAL_USER }}"
