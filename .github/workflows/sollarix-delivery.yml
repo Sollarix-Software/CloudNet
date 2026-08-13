@@ -1,0 +1,87 @@
+name: Sollarix Delivery
+
+on:
+  pull_request:
+    branches: [sollarix]
+  push:
+    branches: [sollarix]
+    tags: ["sollarix-v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: sollarix-delivery-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  distribution:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          distribution: zulu
+          java-version: "25"
+      - uses: gradle/actions/setup-gradle@v5
+        with:
+          cache-read-only: true
+      - name: Build tested distribution
+        run: ./gradlew build genUpdaterInformation --no-daemon --stacktrace
+      - name: Assemble distribution archive
+        run: |
+          mkdir -p build/sollarix-distribution/launcher
+          cp node/impl/build/libs/cloudnet.jar build/sollarix-distribution/
+          cp launcher/java22/build/libs/launcher.jar build/sollarix-distribution/
+          cp .launchermeta/modules.json build/sollarix-distribution/launcher/
+          cp LICENSE build/sollarix-distribution/
+          for file in README-SOLLARIX.md PATCHES-SOLLARIX.md; do
+            if [[ -f "${file}" ]]; then
+              cp "${file}" build/sollarix-distribution/
+            fi
+          done
+          tar -C build/sollarix-distribution -czf build/cloudnet-sollarix-${GITHUB_SHA::12}.tar.gz .
+          sha256sum build/cloudnet-sollarix-${GITHUB_SHA::12}.tar.gz > build/cloudnet-sollarix-${GITHUB_SHA::12}.tar.gz.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cloudnet-sollarix-${{ github.sha }}
+          path: |
+            build/cloudnet-sollarix-*.tar.gz
+            build/cloudnet-sollarix-*.tar.gz.sha256
+          retention-days: 14
+
+  image:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: metadata
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/sollarix-software/cloudnet
+          tags: |
+            type=raw,value=sollarix
+            type=sha,prefix=sollarix-
+            type=ref,event=tag
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ steps.metadata.outputs.tags }}
+          labels: ${{ steps.metadata.outputs.labels }}
+          sbom: true
+          provenance: mode=max
+          build-args: |
+            BRANCH=sollarix
+            VERSION=4.0.0-RC16-sollarix
+            REVISION=${{ github.sha }}
