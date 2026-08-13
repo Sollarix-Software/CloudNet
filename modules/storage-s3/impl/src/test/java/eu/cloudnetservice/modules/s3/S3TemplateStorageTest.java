@@ -50,7 +50,7 @@ class S3TemplateStorageTest {
     .build();
 
   @Container
-  private static final GenericContainer<?> S3 = new GenericContainer<>("localstack/localstack:latest")
+  private static final GenericContainer<?> S3 = new GenericContainer<>("localstack/localstack:3.8.1")
     .withExposedPorts(PORT)
     .withEnv("SERVICES", "s3")
     .waitingFor(Wait.forLogMessage(".*Ready\\.\n", 1));
