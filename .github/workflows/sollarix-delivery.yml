@@ -36,7 +36,12 @@ jobs:
           cp node/impl/build/libs/cloudnet.jar build/sollarix-distribution/
           cp launcher/java22/build/libs/launcher.jar build/sollarix-distribution/
           cp .launchermeta/modules.json build/sollarix-distribution/launcher/
-          cp LICENSE README-SOLLARIX.md PATCHES-SOLLARIX.md build/sollarix-distribution/
+          cp LICENSE build/sollarix-distribution/
+          for file in README-SOLLARIX.md PATCHES-SOLLARIX.md; do
+            if [[ -f "${file}" ]]; then
+              cp "${file}" build/sollarix-distribution/
+            fi
+          done
           tar -C build/sollarix-distribution -czf build/cloudnet-sollarix-${GITHUB_SHA::12}.tar.gz .
           sha256sum build/cloudnet-sollarix-${GITHUB_SHA::12}.tar.gz > build/cloudnet-sollarix-${GITHUB_SHA::12}.tar.gz.sha256
       - uses: actions/upload-artifact@v4
@@ -80,4 +85,3 @@ jobs:
             BRANCH=sollarix
             VERSION=4.0.0-RC16-sollarix
             REVISION=${{ github.sha }}
-            CREATED=${{ fromJSON(steps.metadata.outputs.json).labels['org.opencontainers.image.created'] }}
