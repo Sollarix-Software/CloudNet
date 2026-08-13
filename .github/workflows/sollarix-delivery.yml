@@ -1,6 +1,8 @@
 name: Sollarix Delivery
 
 on:
+  pull_request:
+    branches: [sollarix]
   push:
     branches: [sollarix]
     tags: ["sollarix-v*"]
@@ -46,6 +48,7 @@ jobs:
           retention-days: 14
 
   image:
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
