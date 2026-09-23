@@ -37,22 +37,27 @@ public class UnzipStepExecutor implements InstallStepExecutor {
     @NonNull Set<Path> inputPaths
   ) throws IOException {
     Set<Path> resultPaths = new HashSet<>();
+    var normalizedWorkingDirectory = workingDirectory.toAbsolutePath().normalize();
 
     for (var path : inputPaths) {
       try (var zipInputStream = new ZipInputStream(Files.newInputStream(path))) {
         ZipEntry entry;
         while ((entry = zipInputStream.getNextEntry()) != null) {
-          var targetPath = workingDirectory.resolve(entry.getName());
+          var targetPath = normalizedWorkingDirectory.resolve(entry.getName()).normalize();
 
-          if (!targetPath.normalize().startsWith(workingDirectory)) {
+          if (!targetPath.startsWith(normalizedWorkingDirectory)) {
             throw new IllegalStateException("Zip entry path contains traversal element!");
           }
 
           resultPaths.add(targetPath);
 
           if (entry.isDirectory()) {
-            Files.createDirectory(targetPath);
+            Files.createDirectories(targetPath);
           } else {
+            var parent = targetPath.getParent();
+            if (parent != null) {
+              Files.createDirectories(parent);
+            }
             Files.copy(zipInputStream, targetPath, StandardCopyOption.REPLACE_EXISTING);
           }
         }
