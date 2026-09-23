@@ -16,6 +16,7 @@
 
 package eu.cloudnetservice.node.impl.version.execute.defaults;
 
+import eu.cloudnetservice.node.impl.version.information.VersionInstaller;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -27,7 +28,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mockito;
-import eu.cloudnetservice.node.impl.version.information.VersionInstaller;
 
 public class UnzipStepExecutorTest {
 
