@@ -127,7 +127,9 @@ public final class WildcardUtil {
    * @throws NullPointerException if the given regex string is null.
    */
   public static @Nullable Pattern fixPattern(@NonNull String regex, boolean caseSensitive) {
-    regex = regex.replace("*", ".*");
+    if (regex.contains("*")) {
+      regex = regex.replace("*", ".*");
+    }
     return tryCompile(regex, caseSensitive);
   }
 
