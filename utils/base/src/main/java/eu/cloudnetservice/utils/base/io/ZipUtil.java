@@ -16,7 +16,6 @@
 
 package eu.cloudnetservice.utils.base.io;
 
-import eu.cloudnetservice.utils.base.StringUtil;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
