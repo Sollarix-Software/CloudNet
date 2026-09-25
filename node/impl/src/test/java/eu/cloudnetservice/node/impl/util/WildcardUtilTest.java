@@ -69,6 +69,15 @@ public class WildcardUtilTest {
     Assertions.assertEquals(5, WildcardUtil.filterWildcard(INVALID_NAMEABLES, INVALID_PATTERN, false).size());
   }
 
+  @Test
+  public void testPatternWithoutWildcard() {
+    var pattern = "Lobby-56";
+    Assertions.assertNotNull(WildcardUtil.fixPattern(pattern, true));
+
+    Assertions.assertTrue(WildcardUtil.anyMatch(VALID_NAMEABLES, pattern));
+    Assertions.assertEquals(1, WildcardUtil.filterWildcard(VALID_NAMEABLES, pattern).size());
+  }
+
   private record NamedThing(String name) implements Named {
 
   }
