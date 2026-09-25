@@ -47,7 +47,6 @@ import org.slf4j.LoggerFactory;
 public final class ZipUtil {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ZipUtil.class);
-  private static final boolean IS_WINDOWS = StringUtil.toLower(System.getProperty("os.name")).contains("windows");
 
   private ZipUtil() {
     throw new UnsupportedOperationException();
@@ -241,6 +240,7 @@ public final class ZipUtil {
     // checks first if the zip entry name is malicious before extracting
     ensureSafeZipEntryName(zipEntry.getName());
     var file = targetDirectory.resolve(zipEntry.getName());
+    FileUtil.ensureChild(targetDirectory, file);
 
     if (zipEntry.isDirectory()) {
       FileUtil.createDirectory(file);
@@ -265,7 +265,7 @@ public final class ZipUtil {
       || name.startsWith("/")
       || name.startsWith("\\")
       || name.contains("..")
-      || (name.contains(":") && IS_WINDOWS)) {
+      || name.contains(":")) {
       throw new IllegalStateException(String.format("zip entry name %s contains unsafe characters", name));
     }
   }
