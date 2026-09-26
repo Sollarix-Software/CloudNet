@@ -240,7 +240,11 @@ public final class ZipUtil {
   ) throws IOException {
     // checks first if the zip entry name is malicious before extracting
     ensureSafeZipEntryName(zipEntry.getName());
-    var file = targetDirectory.resolve(zipEntry.getName());
+    var targetDirNormalized = targetDirectory.toAbsolutePath().normalize();
+    var file = targetDirNormalized.resolve(zipEntry.getName()).normalize();
+    if (!file.startsWith(targetDirNormalized)) {
+      throw new IllegalStateException(String.format("zip entry name %s contains unsafe path traversal", zipEntry.getName()));
+    }
 
     if (zipEntry.isDirectory()) {
       FileUtil.createDirectory(file);
