@@ -96,4 +96,29 @@ public final class ZipUtilTest {
     Assertions.assertTrue(Files.exists(TEST_DIR.resolve("nms/bukkit.yml")));
     Assertions.assertTrue(Files.exists(TEST_DIR.resolve("nms/server.properties")));
   }
+
+  @Test
+  void testExtractUnsafeZipEntry() throws Exception {
+    var byteArrayOutputStream = new ByteArrayOutputStream();
+    try (var zipOut = new java.util.zip.ZipOutputStream(byteArrayOutputStream)) {
+      zipOut.putNextEntry(new java.util.zip.ZipEntry("../malicious.txt"));
+      zipOut.write("test".getBytes(StandardCharsets.UTF_8));
+      zipOut.closeEntry();
+    }
+
+    try (var zipIn = new java.util.zip.ZipInputStream(new ByteArrayInputStream(byteArrayOutputStream.toByteArray()))) {
+      Assertions.assertThrows(IllegalStateException.class, () -> ZipUtil.extractZipStream(zipIn, TEST_DIR));
+    }
+
+    var byteArrayOutputStreamColon = new ByteArrayOutputStream();
+    try (var zipOut = new java.util.zip.ZipOutputStream(byteArrayOutputStreamColon)) {
+      zipOut.putNextEntry(new java.util.zip.ZipEntry("C:malicious.txt"));
+      zipOut.write("test".getBytes(StandardCharsets.UTF_8));
+      zipOut.closeEntry();
+    }
+
+    try (var zipIn = new java.util.zip.ZipInputStream(new ByteArrayInputStream(byteArrayOutputStreamColon.toByteArray()))) {
+      Assertions.assertThrows(IllegalStateException.class, () -> ZipUtil.extractZipStream(zipIn, TEST_DIR));
+    }
+  }
 }
