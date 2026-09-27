@@ -16,6 +16,8 @@
 
 package eu.cloudnetservice.node.impl.console;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 import lombok.NonNull;
 import org.jetbrains.annotations.Nullable;
@@ -50,6 +52,9 @@ public enum ConsoleColor {
   private static final String LOOKUP = "0123456789abcdefklmnor";
   private static final String RGB_ANSI = "\u001B[38;2;%d;%d;%dm";
 
+  // Cache compiled Pattern per trigger character to avoid expensive regex compilation on every log/console format call
+  private static final Map<Character, Pattern> RGB_PATTERN_CACHE = new ConcurrentHashMap<>();
+
   private final String name;
   private final String ansiCode;
   private final char index;
@@ -60,7 +65,17 @@ public enum ConsoleColor {
     this.ansiCode = ansiCode;
   }
 
+  private static @NonNull Pattern getRgbPattern(char triggerChar) {
+    return RGB_PATTERN_CACHE.computeIfAbsent(triggerChar,
+      ch -> Pattern.compile(Pattern.quote(String.valueOf(ch)) + "#([\\da-fA-F]){6}"));
+  }
+
   public static @NonNull String toColoredString(char triggerChar, @NonNull String input) {
+    // Fast path: if the input does not contain the trigger character, no color codes or RGB codes exist
+    if (input.indexOf(triggerChar) == -1) {
+      return input;
+    }
+
     var contentBuilder = new StringBuilder(convertRGBColors(triggerChar, input));
 
     var breakIndex = contentBuilder.length() - 1;
@@ -80,15 +95,26 @@ public enum ConsoleColor {
   }
 
   private static @NonNull String convertRGBColors(char triggerChar, @NonNull String input) {
-    var replacePattern = Pattern.compile(triggerChar + "#([\\da-fA-F]){6}");
+    // Fast path: skip regex matching if trigger character is absent
+    if (input.indexOf(triggerChar) == -1) {
+      return input;
+    }
+
+    var replacePattern = getRgbPattern(triggerChar);
     return replacePattern.matcher(input).replaceAll(result -> {
       // we could use java.awt.Color but that would load unnecessary native libraries
-      int hexInput = Integer.decode(result.group().substring(1));
+      // result.group().substring(2) skips the trigger character and '#', directly parsing hex
+      int hexInput = Integer.parseInt(result.group().substring(2), 16);
       return String.format(RGB_ANSI, (hexInput >> 16) & 0xFF, (hexInput >> 8) & 0xFF, hexInput & 0xFF);
     });
   }
 
   public static @NonNull String stripColor(char triggerChar, @NonNull String input) {
+    // Fast path: if the input does not contain the trigger character, no color codes exist
+    if (input.indexOf(triggerChar) == -1) {
+      return input;
+    }
+
     var contentBuilder = new StringBuilder(stripRGBColors(triggerChar, input));
 
     var breakIndex = contentBuilder.length() - 1;
@@ -103,7 +129,12 @@ public enum ConsoleColor {
   }
 
   private static @NonNull String stripRGBColors(char triggerChar, @NonNull String input) {
-    var replacePattern = Pattern.compile(triggerChar + "#([\\da-fA-F]){6}");
+    // Fast path: skip regex matching if trigger character is absent
+    if (input.indexOf(triggerChar) == -1) {
+      return input;
+    }
+
+    var replacePattern = getRgbPattern(triggerChar);
     return replacePattern.matcher(input).replaceAll("");
   }
 
