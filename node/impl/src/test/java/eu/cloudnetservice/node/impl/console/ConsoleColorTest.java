@@ -42,7 +42,7 @@ public class ConsoleColorTest {
   @Test
   void testByChar() {
     Assertions.assertEquals(ConsoleColor.RED, ConsoleColor.byChar('c'));
-    Assertions.assertEquals(ConsoleColor.GREEN, ConsoleColor.byChar('a'));
+    Assertions.assertEquals(ConsoleColor.LIGHT_GREEN, ConsoleColor.byChar('a'));
     Assertions.assertNull(ConsoleColor.byChar('z'));
   }
 
