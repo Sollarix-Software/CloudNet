@@ -21,7 +21,9 @@ import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+import java.util.zip.ZipOutputStream;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -95,5 +97,21 @@ public final class ZipUtilTest {
     Assertions.assertTrue(Files.exists(TEST_DIR.resolve("bungee/config.yml")));
     Assertions.assertTrue(Files.exists(TEST_DIR.resolve("nms/bukkit.yml")));
     Assertions.assertTrue(Files.exists(TEST_DIR.resolve("nms/server.properties")));
+  }
+
+  @Test
+  void testExtractZipPathTraversalBlocked() throws Exception {
+    FileUtil.createDirectory(TEST_DIR);
+    var zipFilePath = TEST_DIR.resolve("traversal.zip");
+
+    try (var out = new ZipOutputStream(Files.newOutputStream(zipFilePath))) {
+      out.putNextEntry(new ZipEntry("../evil.txt"));
+      out.write("evil".getBytes(StandardCharsets.UTF_8));
+      out.closeEntry();
+    }
+
+    var result = ZipUtil.extract(zipFilePath, TEST_DIR);
+    Assertions.assertNull(result);
+    Assertions.assertFalse(Files.exists(TEST_DIR.resolve("../evil.txt").normalize()));
   }
 }
