@@ -240,7 +240,11 @@ public final class ZipUtil {
   ) throws IOException {
     // checks first if the zip entry name is malicious before extracting
     ensureSafeZipEntryName(zipEntry.getName());
-    var file = targetDirectory.resolve(zipEntry.getName());
+    var file = targetDirectory.resolve(zipEntry.getName()).toAbsolutePath().normalize();
+    var normalizedTarget = targetDirectory.toAbsolutePath().normalize();
+    if (!file.startsWith(normalizedTarget)) {
+      throw new IllegalStateException(String.format("zip entry %s points outside target directory", zipEntry.getName()));
+    }
 
     if (zipEntry.isDirectory()) {
       FileUtil.createDirectory(file);

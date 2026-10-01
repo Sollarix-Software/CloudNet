@@ -79,6 +79,23 @@ public final class ZipUtilTest {
   }
 
   @Test
+  void testExtractZipWithTraversal() throws Exception {
+    FileUtil.createDirectory(TEST_DIR);
+    var zipFilePath = TEST_DIR.resolve("traversal.zip");
+    try (
+      var out = new java.util.zip.ZipOutputStream(Files.newOutputStream(zipFilePath))
+    ) {
+      // Entry name containing ".." is caught by ensureSafeZipEntryName
+      out.putNextEntry(new java.util.zip.ZipEntry("safeDir/../outside.txt"));
+      out.write("evil".getBytes(StandardCharsets.UTF_8));
+      out.closeEntry();
+    }
+
+    Assertions.assertThrows(IllegalStateException.class, () -> ZipUtil.extract(zipFilePath, TEST_DIR));
+    Assertions.assertFalse(Files.exists(TEST_DIR.getParent().resolve("outside.txt")));
+  }
+
+  @Test
   void testExtractZip() throws Exception {
     var zipFilePath = TEST_DIR.resolve("test.zip");
 
