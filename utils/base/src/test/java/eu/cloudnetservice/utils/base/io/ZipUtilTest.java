@@ -96,4 +96,41 @@ public final class ZipUtilTest {
     Assertions.assertTrue(Files.exists(TEST_DIR.resolve("nms/bukkit.yml")));
     Assertions.assertTrue(Files.exists(TEST_DIR.resolve("nms/server.properties")));
   }
+
+  @Test
+  void testUnsafeZipEntryExtraction() throws Exception {
+    FileUtil.createDirectory(TEST_DIR);
+    var targetDir = TEST_DIR.resolve("target");
+    FileUtil.createDirectory(targetDir);
+
+    var zipBytesStream = new ByteArrayOutputStream();
+    try (var zipOut = new java.util.zip.ZipOutputStream(zipBytesStream)) {
+      zipOut.putNextEntry(new java.util.zip.ZipEntry("sub/dir/test.txt"));
+      zipOut.write("test".getBytes(StandardCharsets.UTF_8));
+      zipOut.closeEntry();
+    }
+
+    Assertions.assertThrows(
+      IllegalStateException.class,
+      () -> {
+        try (var zipIn = new java.util.zip.ZipInputStream(new ByteArrayInputStream(zipBytesStream.toByteArray()))) {
+          var entry = zipIn.getNextEntry();
+          // Simulating malicious entry with path traversal escaping target directory
+          var fakeEntry = new java.util.zip.ZipEntry("../escaped.txt");
+          var extractEntryMethod = ZipUtil.class.getDeclaredMethod(
+            "extractEntry",
+            java.util.zip.ZipInputStream.class,
+            java.util.zip.ZipEntry.class,
+            Path.class
+          );
+          extractEntryMethod.setAccessible(true);
+          try {
+            extractEntryMethod.invoke(null, zipIn, fakeEntry, targetDir);
+          } catch (java.lang.reflect.InvocationTargetException e) {
+            throw e.getCause();
+          }
+        }
+      }
+    );
+  }
 }
