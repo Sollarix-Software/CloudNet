@@ -215,7 +215,7 @@ public final class ZipUtil {
       }
 
       return targetDirectory;
-    } catch (IOException exception) {
+    } catch (IOException | IllegalStateException exception) {
       LOGGER.debug("Exception unzipping zip file to {}", targetDirectory, exception);
       return null;
     }
@@ -240,7 +240,12 @@ public final class ZipUtil {
   ) throws IOException {
     // checks first if the zip entry name is malicious before extracting
     ensureSafeZipEntryName(zipEntry.getName());
-    var file = targetDirectory.resolve(zipEntry.getName());
+    var normalizedTarget = targetDirectory.toAbsolutePath().normalize();
+    var file = normalizedTarget.resolve(zipEntry.getName()).normalize();
+
+    if (!file.startsWith(normalizedTarget)) {
+      throw new IllegalStateException(String.format("zip entry name %s contains path traversal attempt", zipEntry.getName()));
+    }
 
     if (zipEntry.isDirectory()) {
       FileUtil.createDirectory(file);
