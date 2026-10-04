@@ -25,14 +25,15 @@ import java.util.zip.ZipFile;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 public final class ZipUtilTest {
 
   private static final Path TEST_DIR = Path.of("build", "testDirectory");
 
-  @BeforeAll
-  static void setupTestDirectories() {
+  @BeforeEach
+  void setupTestDirectories() {
     FileUtil.createDirectory(TEST_DIR);
   }
 
