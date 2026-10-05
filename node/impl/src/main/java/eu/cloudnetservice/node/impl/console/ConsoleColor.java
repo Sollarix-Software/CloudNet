@@ -48,7 +48,8 @@ public enum ConsoleColor {
 
   private static final ConsoleColor[] VALUES = values();
   private static final String LOOKUP = "0123456789abcdefklmnor";
-  private static final String RGB_ANSI = "\u001B[38;2;%d;%d;%dm";
+  // Pre-compiled pattern for the default trigger character '&' (used in console logging)
+  private static final Pattern DEFAULT_RGB_PATTERN = Pattern.compile("&#([\\da-fA-F]){6}");
 
   private final String name;
   private final String ansiCode;
@@ -79,12 +80,21 @@ public enum ConsoleColor {
     return contentBuilder.toString();
   }
 
+  private static @NonNull Pattern getRGBPattern(char triggerChar) {
+    // Avoid compiling regex patterns on every line if the default trigger char is used
+    return triggerChar == '&' ? DEFAULT_RGB_PATTERN : Pattern.compile(Pattern.quote(String.valueOf(triggerChar)) + "#([\\da-fA-F]){6}");
+  }
+
   private static @NonNull String convertRGBColors(char triggerChar, @NonNull String input) {
-    var replacePattern = Pattern.compile(triggerChar + "#([\\da-fA-F]){6}");
+    var replacePattern = getRGBPattern(triggerChar);
     return replacePattern.matcher(input).replaceAll(result -> {
       // we could use java.awt.Color but that would load unnecessary native libraries
       int hexInput = Integer.decode(result.group().substring(1));
-      return String.format(RGB_ANSI, (hexInput >> 16) & 0xFF, (hexInput >> 8) & 0xFF, hexInput & 0xFF);
+      int r = (hexInput >> 16) & 0xFF;
+      int g = (hexInput >> 8) & 0xFF;
+      int b = hexInput & 0xFF;
+      // Fast string concatenation avoids String.format overhead on every RGB color match
+      return "\u001B[38;2;" + r + ";" + g + ";" + b + "m";
     });
   }
 
@@ -103,7 +113,7 @@ public enum ConsoleColor {
   }
 
   private static @NonNull String stripRGBColors(char triggerChar, @NonNull String input) {
-    var replacePattern = Pattern.compile(triggerChar + "#([\\da-fA-F]){6}");
+    var replacePattern = getRGBPattern(triggerChar);
     return replacePattern.matcher(input).replaceAll("");
   }
 
