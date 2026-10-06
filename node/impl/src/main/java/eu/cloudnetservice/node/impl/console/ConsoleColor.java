@@ -16,6 +16,8 @@
 
 package eu.cloudnetservice.node.impl.console;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 import lombok.NonNull;
 import org.jetbrains.annotations.Nullable;
@@ -50,6 +52,9 @@ public enum ConsoleColor {
   private static final String LOOKUP = "0123456789abcdefklmnor";
   private static final String RGB_ANSI = "\u001B[38;2;%d;%d;%dm";
 
+  // Cache compiled RGB regex patterns per trigger character to avoid expensive re-compilation on every format call.
+  private static final Map<Character, Pattern> RGB_PATTERNS = new ConcurrentHashMap<>();
+
   private final String name;
   private final String ansiCode;
   private final char index;
@@ -61,6 +66,11 @@ public enum ConsoleColor {
   }
 
   public static @NonNull String toColoredString(char triggerChar, @NonNull String input) {
+    // Fast path: if input contains no trigger char, avoid pattern matching and allocations
+    if (input.indexOf(triggerChar) == -1) {
+      return input;
+    }
+
     var contentBuilder = new StringBuilder(convertRGBColors(triggerChar, input));
 
     var breakIndex = contentBuilder.length() - 1;
@@ -80,7 +90,7 @@ public enum ConsoleColor {
   }
 
   private static @NonNull String convertRGBColors(char triggerChar, @NonNull String input) {
-    var replacePattern = Pattern.compile(triggerChar + "#([\\da-fA-F]){6}");
+    var replacePattern = rgbPattern(triggerChar);
     return replacePattern.matcher(input).replaceAll(result -> {
       // we could use java.awt.Color but that would load unnecessary native libraries
       int hexInput = Integer.decode(result.group().substring(1));
@@ -89,6 +99,11 @@ public enum ConsoleColor {
   }
 
   public static @NonNull String stripColor(char triggerChar, @NonNull String input) {
+    // Fast path: if input contains no trigger char, avoid pattern matching and allocations
+    if (input.indexOf(triggerChar) == -1) {
+      return input;
+    }
+
     var contentBuilder = new StringBuilder(stripRGBColors(triggerChar, input));
 
     var breakIndex = contentBuilder.length() - 1;
@@ -103,8 +118,12 @@ public enum ConsoleColor {
   }
 
   private static @NonNull String stripRGBColors(char triggerChar, @NonNull String input) {
-    var replacePattern = Pattern.compile(triggerChar + "#([\\da-fA-F]){6}");
+    var replacePattern = rgbPattern(triggerChar);
     return replacePattern.matcher(input).replaceAll("");
+  }
+
+  private static @NonNull Pattern rgbPattern(char triggerChar) {
+    return RGB_PATTERNS.computeIfAbsent(triggerChar, ch -> Pattern.compile(Pattern.quote(String.valueOf(ch)) + "#([\\da-fA-F]){6}"));
   }
 
   public static @Nullable ConsoleColor byChar(char index) {
