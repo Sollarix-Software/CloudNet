@@ -17,7 +17,6 @@
 package eu.cloudnetservice.node.impl.version.execute.defaults;
 
 import eu.cloudnetservice.node.impl.version.information.VersionInstaller;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
