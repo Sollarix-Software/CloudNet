@@ -96,4 +96,26 @@ public final class ZipUtilTest {
     Assertions.assertTrue(Files.exists(TEST_DIR.resolve("nms/bukkit.yml")));
     Assertions.assertTrue(Files.exists(TEST_DIR.resolve("nms/server.properties")));
   }
+
+  @Test
+  void testExtractMaliciousZipEntry() throws Exception {
+    var targetExtractDir = TEST_DIR.resolve("targetDir");
+    FileUtil.createDirectory(targetExtractDir);
+
+    var zipInputStream = new java.util.zip.ZipInputStream(new ByteArrayInputStream(new byte[0])) {
+      private boolean served = false;
+
+      @Override
+      public java.util.zip.ZipEntry getNextEntry() {
+        if (!served) {
+          served = true;
+          return new java.util.zip.ZipEntry("sub/../../malicious.txt");
+        }
+        return null;
+      }
+    };
+
+    Assertions.assertNull(ZipUtil.extractZipStream(zipInputStream, targetExtractDir));
+    Assertions.assertFalse(Files.exists(TEST_DIR.resolve("malicious.txt")));
+  }
 }
