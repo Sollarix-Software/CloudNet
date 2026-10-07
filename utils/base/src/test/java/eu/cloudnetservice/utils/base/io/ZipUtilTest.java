@@ -107,8 +107,8 @@ public final class ZipUtilTest {
 
       @Override
       public java.util.zip.ZipEntry getNextEntry() {
-        if (!served) {
-          served = true;
+        if (!this.served) {
+          this.served = true;
           return new java.util.zip.ZipEntry("sub/../../malicious.txt");
         }
         return null;
