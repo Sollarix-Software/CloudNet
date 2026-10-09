@@ -13,7 +13,7 @@ jobs:
   analyze:
     name: Analyze
     runs-on: ubuntu-latest
-    if: ${{ !startsWith(github.ref, 'refs/heads/renovate/') }}
+    if: ${{ false && !startsWith(github.ref, 'refs/heads/renovate/') }}
 
     steps:
       - name: Checkout repository

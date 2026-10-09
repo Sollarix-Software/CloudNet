@@ -16,6 +16,8 @@
 
 package eu.cloudnetservice.node.impl.console;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 import lombok.NonNull;
 import org.jetbrains.annotations.Nullable;
@@ -50,6 +52,9 @@ public enum ConsoleColor {
   private static final String LOOKUP = "0123456789abcdefklmnor";
   private static final String RGB_ANSI = "\u001B[38;2;%d;%d;%dm";
 
+  // Cache compiled RGB regex patterns per trigger character to avoid expensive Pattern compilation on every log/console line.
+  private static final Map<Character, Pattern> RGB_PATTERNS = new ConcurrentHashMap<>();
+
   private final String name;
   private final String ansiCode;
   private final char index;
@@ -79,9 +84,14 @@ public enum ConsoleColor {
     return contentBuilder.toString();
   }
 
+  private static @NonNull Pattern rgbPattern(char triggerChar) {
+    return RGB_PATTERNS.computeIfAbsent(
+      triggerChar,
+      c -> Pattern.compile(Pattern.quote(String.valueOf(c)) + "#([\\da-fA-F]){6}"));
+  }
+
   private static @NonNull String convertRGBColors(char triggerChar, @NonNull String input) {
-    var replacePattern = Pattern.compile(triggerChar + "#([\\da-fA-F]){6}");
-    return replacePattern.matcher(input).replaceAll(result -> {
+    return rgbPattern(triggerChar).matcher(input).replaceAll(result -> {
       // we could use java.awt.Color but that would load unnecessary native libraries
       int hexInput = Integer.decode(result.group().substring(1));
       return String.format(RGB_ANSI, (hexInput >> 16) & 0xFF, (hexInput >> 8) & 0xFF, hexInput & 0xFF);
@@ -103,8 +113,7 @@ public enum ConsoleColor {
   }
 
   private static @NonNull String stripRGBColors(char triggerChar, @NonNull String input) {
-    var replacePattern = Pattern.compile(triggerChar + "#([\\da-fA-F]){6}");
-    return replacePattern.matcher(input).replaceAll("");
+    return rgbPattern(triggerChar).matcher(input).replaceAll("");
   }
 
   public static @Nullable ConsoleColor byChar(char index) {
