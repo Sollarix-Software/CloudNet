@@ -15,6 +15,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     name: Build and publish
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
 
     steps:
       - name: Checkout repository
@@ -48,6 +52,7 @@ jobs:
         with:
           files: '**/build/test-results/test/TEST-*.xml'
           comment_mode: ${{ github.event_name == 'pull_request' && 'always' || 'off' }}
+          action_fail: false
 
       - name: Get branch name
         id: branch-name
