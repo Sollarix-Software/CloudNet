@@ -101,23 +101,12 @@ public final class ZipUtilTest {
   void testExtractZipPathTraversal() throws Exception {
     var zipFilePath = TEST_DIR.resolve("traversal.zip").toAbsolutePath();
 
-    try (
-      var out = Files.newOutputStream(zipFilePath);
-      var is = ZipUtilTest.class.getClassLoader().getResourceAsStream("empty_zip_file.zip")
-    ) {
-      FileUtil.copy(is, out);
+    try (var zos = new java.util.zip.ZipOutputStream(Files.newOutputStream(zipFilePath))) {
+      var entry = new java.util.zip.ZipEntry("../traversal.txt");
+      zos.putNextEntry(entry);
+      zos.write("Malicious content".getBytes(StandardCharsets.UTF_8));
+      zos.closeEntry();
     }
-
-    FileUtil.openZipFile(zipFilePath, fileSystem -> {
-      var zipEntryInfoFile = fileSystem.getPath("../traversal.txt");
-
-      try (
-        var out = Files.newOutputStream(zipEntryInfoFile);
-        var is = new ByteArrayInputStream("Malicious content".getBytes(StandardCharsets.UTF_8))
-      ) {
-        FileUtil.copy(is, out);
-      }
-    });
 
     var targetDir = TEST_DIR.resolve("extract_target");
     FileUtil.createDirectory(targetDir);
