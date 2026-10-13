@@ -49,6 +49,7 @@ public enum ConsoleColor {
   private static final ConsoleColor[] VALUES = values();
   private static final String LOOKUP = "0123456789abcdefklmnor";
   private static final String RGB_ANSI = "\u001B[38;2;%d;%d;%dm";
+  private static final Pattern AMPERSAND_RGB_PATTERN = Pattern.compile("&" + "#([\\da-fA-F]){6}");
 
   private final String name;
   private final String ansiCode;
@@ -60,7 +61,20 @@ public enum ConsoleColor {
     this.ansiCode = ansiCode;
   }
 
+  // Optimization: Pre-compile the default ampersand RGB pattern and fast-path when no triggerChar is present,
+  // avoiding expensive Pattern.compile(...) and object allocations per console line.
+  private static @NonNull Pattern rgbPattern(char triggerChar) {
+    if (triggerChar == '&') {
+      return AMPERSAND_RGB_PATTERN;
+    }
+    return Pattern.compile(Pattern.quote(String.valueOf(triggerChar)) + "#([\\da-fA-F]){6}");
+  }
+
   public static @NonNull String toColoredString(char triggerChar, @NonNull String input) {
+    if (input.indexOf(triggerChar) == -1) {
+      return input;
+    }
+
     var contentBuilder = new StringBuilder(convertRGBColors(triggerChar, input));
 
     var breakIndex = contentBuilder.length() - 1;
@@ -80,7 +94,11 @@ public enum ConsoleColor {
   }
 
   private static @NonNull String convertRGBColors(char triggerChar, @NonNull String input) {
-    var replacePattern = Pattern.compile(triggerChar + "#([\\da-fA-F]){6}");
+    if (input.indexOf(triggerChar) == -1 || input.indexOf('#') == -1) {
+      return input;
+    }
+
+    var replacePattern = rgbPattern(triggerChar);
     return replacePattern.matcher(input).replaceAll(result -> {
       // we could use java.awt.Color but that would load unnecessary native libraries
       int hexInput = Integer.decode(result.group().substring(1));
@@ -89,6 +107,10 @@ public enum ConsoleColor {
   }
 
   public static @NonNull String stripColor(char triggerChar, @NonNull String input) {
+    if (input.indexOf(triggerChar) == -1) {
+      return input;
+    }
+
     var contentBuilder = new StringBuilder(stripRGBColors(triggerChar, input));
 
     var breakIndex = contentBuilder.length() - 1;
@@ -103,7 +125,11 @@ public enum ConsoleColor {
   }
 
   private static @NonNull String stripRGBColors(char triggerChar, @NonNull String input) {
-    var replacePattern = Pattern.compile(triggerChar + "#([\\da-fA-F]){6}");
+    if (input.indexOf(triggerChar) == -1 || input.indexOf('#') == -1) {
+      return input;
+    }
+
+    var replacePattern = rgbPattern(triggerChar);
     return replacePattern.matcher(input).replaceAll("");
   }
 
