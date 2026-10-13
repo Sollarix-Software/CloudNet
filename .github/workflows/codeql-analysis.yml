@@ -19,7 +19,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
 
-      - name: Setup java
+      - name: Setup Java 21 (for Gradle Toolchain)
+        uses: actions/setup-java@v5
+        with:
+          java-version: 21
+          distribution: 'zulu'
+
+      - name: Setup Java 25
         uses: actions/setup-java@v5
         with:
           java-version: 25
@@ -38,8 +44,8 @@ jobs:
           tools: linked
           languages: 'java'
 
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@v4
+      - name: Build Code
+        run: ./gradlew testClasses --no-daemon
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v4
