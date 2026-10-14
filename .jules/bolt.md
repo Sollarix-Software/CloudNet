@@ -1,0 +1,3 @@
+## 2026-03-31 - Console string formatting and dynamic regex compilation in hot paths
+**Learning:** `ConsoleColor.toColoredString` and `stripColor` are called frequently for console logging and input processing. Dynamic `Pattern.compile` per call and `String.format` create significant CPU and allocation overhead even for plain text messages without color codes.
+**Action:** Check for presence of trigger characters (`indexOf`) before instantiating regex matchers or string builders, cache compiled patterns in a `ConcurrentHashMap`, and parse hex substrings directly with `Integer.parseInt(s, start, end, 16)`.
