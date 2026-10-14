@@ -48,6 +48,7 @@ jobs:
         with:
           files: '**/build/test-results/test/TEST-*.xml'
           comment_mode: ${{ github.event_name == 'pull_request' && 'always' || 'off' }}
+          check_run: false
 
       - name: Get branch name
         id: branch-name
