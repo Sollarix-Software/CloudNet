@@ -15,6 +15,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     name: Build and publish
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
 
     steps:
       - name: Checkout repository
@@ -44,6 +48,7 @@ jobs:
 
       - name: Publish test summary
         if: ${{ always() }}
+        continue-on-error: true
         uses: EnricoMi/publish-unit-test-result-action@v2
         with:
           files: '**/build/test-results/test/TEST-*.xml'
