@@ -13,6 +13,10 @@ jobs:
   analyze:
     name: Analyze
     runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
     if: ${{ !startsWith(github.ref, 'refs/heads/renovate/') }}
 
     steps:
