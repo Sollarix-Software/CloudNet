@@ -50,6 +50,9 @@ public enum ConsoleColor {
   private static final String LOOKUP = "0123456789abcdefklmnor";
   private static final String RGB_ANSI = "\u001B[38;2;%d;%d;%dm";
 
+  // Cache compiled RGB regex patterns per trigger char to avoid expensive regex compilation on every console line
+  private static final java.util.Map<Character, Pattern> RGB_PATTERNS = new java.util.concurrent.ConcurrentHashMap<>();
+
   private final String name;
   private final String ansiCode;
   private final char index;
@@ -80,7 +83,7 @@ public enum ConsoleColor {
   }
 
   private static @NonNull String convertRGBColors(char triggerChar, @NonNull String input) {
-    var replacePattern = Pattern.compile(triggerChar + "#([\\da-fA-F]){6}");
+    var replacePattern = getRgbPattern(triggerChar);
     return replacePattern.matcher(input).replaceAll(result -> {
       // we could use java.awt.Color but that would load unnecessary native libraries
       int hexInput = Integer.decode(result.group().substring(1));
@@ -103,8 +106,14 @@ public enum ConsoleColor {
   }
 
   private static @NonNull String stripRGBColors(char triggerChar, @NonNull String input) {
-    var replacePattern = Pattern.compile(triggerChar + "#([\\da-fA-F]){6}");
+    var replacePattern = getRgbPattern(triggerChar);
     return replacePattern.matcher(input).replaceAll("");
+  }
+
+  private static @NonNull Pattern getRgbPattern(char triggerChar) {
+    return RGB_PATTERNS.computeIfAbsent(
+      triggerChar,
+      c -> Pattern.compile(Pattern.quote(Character.toString(c)) + "#([\\da-fA-F]){6}"));
   }
 
   public static @Nullable ConsoleColor byChar(char index) {
