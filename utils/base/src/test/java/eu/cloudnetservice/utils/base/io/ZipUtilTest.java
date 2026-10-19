@@ -79,6 +79,26 @@ public final class ZipUtilTest {
   }
 
   @Test
+  void testExtractZipEntryPathTraversal() throws Exception {
+    var zipFilePath = TEST_DIR.resolve("traversal.zip");
+    try (
+      var out = new java.util.zip.ZipOutputStream(Files.newOutputStream(zipFilePath))
+    ) {
+      out.putNextEntry(new java.util.zip.ZipEntry("../evil.txt"));
+      out.write("evil".getBytes(StandardCharsets.UTF_8));
+      out.closeEntry();
+    }
+
+    var targetDir = TEST_DIR.resolve("target");
+    FileUtil.createDirectory(targetDir);
+
+    // ZipUtil.extract returns null when an exception occurs during extraction
+    var result = ZipUtil.extract(zipFilePath, targetDir);
+    Assertions.assertNull(result);
+    Assertions.assertFalse(Files.exists(TEST_DIR.resolve("evil.txt")));
+  }
+
+  @Test
   void testExtractZip() throws Exception {
     var zipFilePath = TEST_DIR.resolve("test.zip");
 
