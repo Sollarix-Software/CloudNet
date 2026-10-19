@@ -7,6 +7,11 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+
 concurrency:
   cancel-in-progress: true
   group: build-${{ github.event.pull_request.number || github.ref }}
@@ -48,6 +53,7 @@ jobs:
         with:
           files: '**/build/test-results/test/TEST-*.xml'
           comment_mode: ${{ github.event_name == 'pull_request' && 'always' || 'off' }}
+          action_fail: false
 
       - name: Get branch name
         id: branch-name
@@ -55,7 +61,7 @@ jobs:
 
       - name: Publish updater metadata
         uses: s0/git-publish-subdir-action@develop
-        if: ${{ github.event_name != 'pull_request' && !startsWith(github.ref, 'refs/heads/renovate/') }}
+        if: ${{ github.event_name != 'pull_request' && !startsWith(github.ref, 'refs/heads/renovate/') && secrets.SSH_PRIVATE_KEY != '' }}
         env:
           REPO: git@github.com:CloudNetService/launchermeta.git
           BRANCH: ${{ steps.branch-name.outputs.current_branch }}
