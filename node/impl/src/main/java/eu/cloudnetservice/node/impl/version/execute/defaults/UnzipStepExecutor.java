@@ -18,6 +18,7 @@ package eu.cloudnetservice.node.impl.version.execute.defaults;
 
 import eu.cloudnetservice.node.impl.version.execute.InstallStepExecutor;
 import eu.cloudnetservice.node.impl.version.information.VersionInstaller;
+import eu.cloudnetservice.utils.base.io.FileUtil;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -43,10 +44,8 @@ public class UnzipStepExecutor implements InstallStepExecutor {
         ZipEntry entry;
         while ((entry = zipInputStream.getNextEntry()) != null) {
           var targetPath = workingDirectory.resolve(entry.getName());
-
-          if (!targetPath.normalize().startsWith(workingDirectory)) {
-            throw new IllegalStateException("Zip entry path contains traversal element!");
-          }
+          // Ensure child path is within working directory to prevent Zip Slip / path traversal
+          FileUtil.ensureChild(workingDirectory, targetPath);
 
           resultPaths.add(targetPath);
 
