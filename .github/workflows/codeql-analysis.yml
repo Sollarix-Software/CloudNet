@@ -14,6 +14,10 @@ jobs:
     name: Analyze
     runs-on: ubuntu-latest
     if: ${{ !startsWith(github.ref, 'refs/heads/renovate/') }}
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
 
     steps:
       - name: Checkout repository
