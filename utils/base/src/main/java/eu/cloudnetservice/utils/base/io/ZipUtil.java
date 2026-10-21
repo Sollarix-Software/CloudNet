@@ -215,7 +215,7 @@ public final class ZipUtil {
       }
 
       return targetDirectory;
-    } catch (IOException exception) {
+    } catch (Exception exception) {
       LOGGER.debug("Exception unzipping zip file to {}", targetDirectory, exception);
       return null;
     }
@@ -241,6 +241,8 @@ public final class ZipUtil {
     // checks first if the zip entry name is malicious before extracting
     ensureSafeZipEntryName(zipEntry.getName());
     var file = targetDirectory.resolve(zipEntry.getName());
+    // Ensure the extracted target file is strictly within the target directory (defense-in-depth against Zip Slip)
+    FileUtil.ensureChild(targetDirectory, file);
 
     if (zipEntry.isDirectory()) {
       FileUtil.createDirectory(file);
