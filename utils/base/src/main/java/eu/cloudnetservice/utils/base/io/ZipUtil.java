@@ -215,7 +215,7 @@ public final class ZipUtil {
       }
 
       return targetDirectory;
-    } catch (IOException exception) {
+    } catch (Exception exception) {
       LOGGER.debug("Exception unzipping zip file to {}", targetDirectory, exception);
       return null;
     }
