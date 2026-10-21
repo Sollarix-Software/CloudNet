@@ -27,6 +27,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 import lombok.NonNull;
 import org.jetbrains.annotations.UnmodifiableView;
@@ -43,6 +44,7 @@ public abstract class AbstractServiceLogCache implements ServiceConsoleLogCache 
   protected final ServiceId associatedServiceId;
 
   protected final Queue<String> cachedLogMessages = new ConcurrentLinkedQueue<>();
+  protected final AtomicInteger cachedLogMessagesSize = new AtomicInteger();
   protected final Set<ServiceConsoleLineHandler> handlers = ConcurrentHashMap.newKeySet();
 
   protected volatile int logCacheSize;
@@ -73,6 +75,10 @@ public abstract class AbstractServiceLogCache implements ServiceConsoleLogCache 
   public void logCacheSize(int cacheSize) {
     Preconditions.checkArgument(cacheSize >= 0, "Cache size must be higher or equal to 0");
     this.logCacheSize = cacheSize;
+    if (cacheSize == 0) {
+      this.cachedLogMessages.clear();
+      this.cachedLogMessagesSize.set(0);
+    }
   }
 
   @Override
@@ -113,12 +119,20 @@ public abstract class AbstractServiceLogCache implements ServiceConsoleLogCache 
 
     // insert the log line into the cache, unless the cache is disabled
     // if needed we also remove elements from the cache to stay in the provided size bounds
-    if (this.logCacheSize > 0) {
-      while (this.cachedLogMessages.size() > this.logCacheSize) {
-        this.cachedLogMessages.poll();
-      }
-
+    // Optimization: ConcurrentLinkedQueue.size() is an O(N) operation that traverses all nodes.
+    // We maintain an AtomicInteger size counter to check and enforce logCacheSize in O(1) time.
+    var maxLogCacheSize = this.logCacheSize;
+    if (maxLogCacheSize > 0) {
       this.cachedLogMessages.add(entry);
+      if (this.cachedLogMessagesSize.incrementAndGet() > maxLogCacheSize) {
+        while (this.cachedLogMessagesSize.get() > this.logCacheSize) {
+          if (this.cachedLogMessages.poll() != null) {
+            this.cachedLogMessagesSize.decrementAndGet();
+          } else {
+            break;
+          }
+        }
+      }
     }
 
     if (this.alwaysPrintErrorStreamToConsole && comesFromErrorStream) {
