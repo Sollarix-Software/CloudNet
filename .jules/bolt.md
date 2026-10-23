@@ -1,0 +1,3 @@
+## 2026-03-31 - [Cache Regex Pattern Compilation in ConsoleColor]
+**Learning:** `ConsoleColor` methods `toColoredString` and `stripColor` previously compiled regex patterns (`Pattern.compile(...)`) on every call. In high-frequency console output formatting, compiling un-cached regex patterns causes repeated overhead and object allocation. Using Caffeine's `LoadingCache<Character, Pattern>` caches thread-safe `Pattern` instances per trigger character.
+**Action:** Always check high-frequency utility methods like console log/string formatters for repeated `Pattern.compile(...)` calls and cache compiled `Pattern` instances.
