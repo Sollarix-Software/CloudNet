@@ -16,6 +16,8 @@
 
 package eu.cloudnetservice.node.impl.console;
 
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import java.util.regex.Pattern;
 import lombok.NonNull;
 import org.jetbrains.annotations.Nullable;
@@ -50,6 +52,10 @@ public enum ConsoleColor {
   private static final String LOOKUP = "0123456789abcdefklmnor";
   private static final String RGB_ANSI = "\u001B[38;2;%d;%d;%dm";
 
+  // Cache compiled RGB regex patterns per trigger character to prevent repeated Pattern.compile calls on every console string conversion
+  private static final LoadingCache<Character, Pattern> RGB_PATTERN_CACHE = Caffeine.newBuilder()
+    .build(triggerChar -> Pattern.compile(Pattern.quote(String.valueOf(triggerChar)) + "#([\\da-fA-F]){6}"));
+
   private final String name;
   private final String ansiCode;
   private final char index;
@@ -80,7 +86,7 @@ public enum ConsoleColor {
   }
 
   private static @NonNull String convertRGBColors(char triggerChar, @NonNull String input) {
-    var replacePattern = Pattern.compile(triggerChar + "#([\\da-fA-F]){6}");
+    var replacePattern = RGB_PATTERN_CACHE.get(triggerChar);
     return replacePattern.matcher(input).replaceAll(result -> {
       // we could use java.awt.Color but that would load unnecessary native libraries
       int hexInput = Integer.decode(result.group().substring(1));
@@ -103,7 +109,7 @@ public enum ConsoleColor {
   }
 
   private static @NonNull String stripRGBColors(char triggerChar, @NonNull String input) {
-    var replacePattern = Pattern.compile(triggerChar + "#([\\da-fA-F]){6}");
+    var replacePattern = RGB_PATTERN_CACHE.get(triggerChar);
     return replacePattern.matcher(input).replaceAll("");
   }
 
