@@ -96,4 +96,28 @@ public final class ZipUtilTest {
     Assertions.assertTrue(Files.exists(TEST_DIR.resolve("nms/bukkit.yml")));
     Assertions.assertTrue(Files.exists(TEST_DIR.resolve("nms/server.properties")));
   }
+
+  @Test
+  void testExtractUnsafeZipEntry() throws Exception {
+    var targetDir = TEST_DIR.resolve("extract_unsafe");
+    FileUtil.createDirectory(targetDir);
+
+    // ensureSafeZipEntryName throws IllegalStateException for name containing ".." or starting with "/"
+    var zipBytes = createZipWithEntry("../outside.txt", "malicious content");
+    Assertions.assertThrows(IllegalStateException.class, () -> {
+      ZipUtil.extractZipStream(new java.util.zip.ZipInputStream(new ByteArrayInputStream(zipBytes)), targetDir);
+    });
+    Assertions.assertFalse(Files.exists(TEST_DIR.resolve("outside.txt")));
+  }
+
+  private static byte[] createZipWithEntry(String name, String content) throws Exception {
+    var baos = new ByteArrayOutputStream();
+    try (var zos = new java.util.zip.ZipOutputStream(baos)) {
+      var entry = new java.util.zip.ZipEntry(name);
+      zos.putNextEntry(entry);
+      zos.write(content.getBytes(StandardCharsets.UTF_8));
+      zos.closeEntry();
+    }
+    return baos.toByteArray();
+  }
 }
