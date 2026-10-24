@@ -44,10 +44,12 @@ jobs:
 
       - name: Publish test summary
         if: ${{ always() }}
+        continue-on-error: true
         uses: EnricoMi/publish-unit-test-result-action@v2
         with:
           files: '**/build/test-results/test/TEST-*.xml'
           comment_mode: ${{ github.event_name == 'pull_request' && 'always' || 'off' }}
+          action_fail: false
 
       - name: Get branch name
         id: branch-name
