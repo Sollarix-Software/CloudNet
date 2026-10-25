@@ -96,4 +96,14 @@ public final class ZipUtilTest {
     Assertions.assertTrue(Files.exists(TEST_DIR.resolve("nms/bukkit.yml")));
     Assertions.assertTrue(Files.exists(TEST_DIR.resolve("nms/server.properties")));
   }
+
+  @Test
+  void testZipPathTraversalPrevention() {
+    var maliciousName = "../evil.txt";
+
+    Assertions.assertThrows(
+      Exception.class,
+      () -> FileUtil.ensureChild(TEST_DIR, TEST_DIR.resolve(maliciousName))
+    );
+  }
 }
