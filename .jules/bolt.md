@@ -1,0 +1,3 @@
+## 2026-03-31 - Cache Pattern Instances and Fast-Path Check for Console Color Processing
+**Learning:** `ConsoleColor` formatting and stripping routines previously compiled regex patterns dynamically on every call (`Pattern.compile(...)`) and constructed `StringBuilder` instances even when no trigger characters were present in the string.
+**Action:** Always cache compiled `Pattern` objects in thread-safe maps (`ConcurrentHashMap`) or static final fields when regex patterns depend on input parameters, and add an early return fast-path (`indexOf(triggerChar) == -1`) before instantiating regex matchers or string builders.
