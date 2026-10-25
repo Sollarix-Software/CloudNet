@@ -46,9 +46,8 @@ jobs:
         if: ${{ always() }}
         uses: EnricoMi/publish-unit-test-result-action@v2
         with:
-          check_run: false
           files: '**/build/test-results/test/TEST-*.xml'
-          comment_mode: 'off'
+          comment_mode: ${{ github.event_name == 'pull_request' && 'always' || 'off' }}
 
       - name: Get branch name
         id: branch-name

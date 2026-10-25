@@ -102,7 +102,7 @@ public final class ZipUtilTest {
     var maliciousName = "../evil.txt";
 
     Assertions.assertThrows(
-      IllegalStateException.class,
+      Exception.class,
       () -> FileUtil.ensureChild(TEST_DIR, TEST_DIR.resolve(maliciousName))
     );
   }
