@@ -1,8 +1,6 @@
 name: "CodeQL"
 
 on:
-  push:
-    branches: [ "**" ]
   pull_request:
   schedule:
     - cron: '00 2 * * *'
@@ -15,7 +13,7 @@ jobs:
   analyze:
     name: Analyze
     runs-on: ubuntu-latest
-    if: ${{ !startsWith(github.ref, 'refs/heads/renovate/') }}
+    if: ${{ github.repository == 'CloudNetService/CloudNet' && !startsWith(github.ref, 'refs/heads/renovate/') }}
     permissions:
       actions: read
       contents: read
