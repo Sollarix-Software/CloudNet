@@ -233,7 +233,7 @@ public final class ZipUtil {
    * @throws IllegalStateException if the zip entry has a malicious name.
    * @throws NullPointerException  if the given input stream, zip entry or target directory is null.
    */
-  private static void extractEntry(
+  static void extractEntry(
     @NonNull ZipInputStream in,
     @NonNull ZipEntry zipEntry,
     @NonNull Path targetDirectory
@@ -241,6 +241,8 @@ public final class ZipUtil {
     // checks first if the zip entry name is malicious before extracting
     ensureSafeZipEntryName(zipEntry.getName());
     var file = targetDirectory.resolve(zipEntry.getName());
+    // ensure target destination path does not escape target directory (Zip Slip protection)
+    FileUtil.ensureChild(targetDirectory, file);
 
     if (zipEntry.isDirectory()) {
       FileUtil.createDirectory(file);
