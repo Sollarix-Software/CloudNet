@@ -96,4 +96,14 @@ public final class ZipUtilTest {
     Assertions.assertTrue(Files.exists(TEST_DIR.resolve("nms/bukkit.yml")));
     Assertions.assertTrue(Files.exists(TEST_DIR.resolve("nms/server.properties")));
   }
+
+  @Test
+  void testZipSlipPrevention() {
+    Assertions.assertThrows(
+      IllegalStateException.class,
+      () -> ZipUtil.extractEntry(
+        new java.util.zip.ZipInputStream(java.io.InputStream.nullInputStream()),
+        new java.util.zip.ZipEntry("../malicious.txt"),
+        TEST_DIR));
+  }
 }
