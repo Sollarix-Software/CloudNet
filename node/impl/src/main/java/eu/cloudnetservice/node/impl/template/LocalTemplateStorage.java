@@ -131,7 +131,9 @@ public class LocalTemplateStorage implements TemplateStorage {
     @NonNull ServiceTemplate template,
     @NonNull String path
   ) throws IOException {
-    var filePath = this.getTemplatePath(template).resolve(path);
+    var root = this.getTemplatePath(template);
+    var filePath = root.resolve(path);
+    FileUtil.ensureChild(root, filePath);
     if (Files.notExists(filePath)) {
       Files.createDirectories(filePath.getParent());
     }
@@ -144,7 +146,9 @@ public class LocalTemplateStorage implements TemplateStorage {
     @NonNull ServiceTemplate template,
     @NonNull String path
   ) throws IOException {
-    var filePath = this.getTemplatePath(template).resolve(path);
+    var root = this.getTemplatePath(template);
+    var filePath = root.resolve(path);
+    FileUtil.ensureChild(root, filePath);
     if (Files.notExists(filePath)) {
       Files.createDirectories(filePath.getParent());
     }
@@ -154,7 +158,9 @@ public class LocalTemplateStorage implements TemplateStorage {
 
   @Override
   public boolean createFile(@NonNull ServiceTemplate template, @NonNull String path) {
-    var filePath = this.getTemplatePath(template).resolve(path);
+    var root = this.getTemplatePath(template);
+    var filePath = root.resolve(path);
+    FileUtil.ensureChild(root, filePath);
     if (Files.exists(filePath)) {
       return false;
     } else {
@@ -170,7 +176,9 @@ public class LocalTemplateStorage implements TemplateStorage {
 
   @Override
   public boolean createDirectory(@NonNull ServiceTemplate template, @NonNull String path) {
-    var dirPath = this.getTemplatePath(template).resolve(path);
+    var root = this.getTemplatePath(template);
+    var dirPath = root.resolve(path);
+    FileUtil.ensureChild(root, dirPath);
     if (Files.exists(dirPath)) {
       return false;
     } else {
@@ -181,12 +189,17 @@ public class LocalTemplateStorage implements TemplateStorage {
 
   @Override
   public boolean hasFile(@NonNull ServiceTemplate template, @NonNull String path) {
-    return Files.exists(this.getTemplatePath(template).resolve(path));
+    var root = this.getTemplatePath(template);
+    var filePath = root.resolve(path);
+    FileUtil.ensureChild(root, filePath);
+    return Files.exists(filePath);
   }
 
   @Override
   public boolean deleteFile(@NonNull ServiceTemplate template, @NonNull String path) {
-    var filePath = this.getTemplatePath(template).resolve(path);
+    var root = this.getTemplatePath(template);
+    var filePath = root.resolve(path);
+    FileUtil.ensureChild(root, filePath);
     if (Files.exists(filePath) && !Files.isDirectory(filePath)) {
       FileUtil.delete(filePath);
       return true;
@@ -200,14 +213,18 @@ public class LocalTemplateStorage implements TemplateStorage {
     @NonNull ServiceTemplate template,
     @NonNull String path
   ) throws IOException {
-    var filePath = this.getTemplatePath(template).resolve(path);
+    var root = this.getTemplatePath(template);
+    var filePath = root.resolve(path);
+    FileUtil.ensureChild(root, filePath);
     return Files.notExists(filePath) || Files.isDirectory(filePath) ? null : Files.newInputStream(filePath);
   }
 
   @Override
   public @Nullable FileInfo fileInfo(@NonNull ServiceTemplate template, @NonNull String path) {
     try {
-      var filePath = this.getTemplatePath(template).resolve(path);
+      var root = this.getTemplatePath(template);
+      var filePath = root.resolve(path);
+      FileUtil.ensureChild(root, filePath);
       return Files.exists(filePath) ? FileInfo.of(filePath, Path.of(path)) : null;
     } catch (IOException exception) {
       return null;
@@ -222,8 +239,12 @@ public class LocalTemplateStorage implements TemplateStorage {
   ) {
     List<FileInfo> out = new ArrayList<>();
     var root = this.getTemplatePath(template);
+    var targetDir = root.resolve(dir);
+    if (!dir.isEmpty()) {
+      FileUtil.ensureChild(root, targetDir);
+    }
     // walk over all files
-    FileUtil.walkFileTree(root.resolve(dir), (parent, file) -> {
+    FileUtil.walkFileTree(targetDir, (parent, file) -> {
       try {
         out.add(FileInfo.of(file, root.relativize(file)));
       } catch (IOException ignored) {

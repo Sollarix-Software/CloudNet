@@ -184,6 +184,20 @@ class LocalTemplateStorageTest {
   }
 
   @Test
+  @Order(105)
+  void testPathTraversalPrevention() {
+    Assertions.assertThrows(IllegalStateException.class, () -> storage.newOutputStream(TEMPLATE, "../secret.txt"));
+    Assertions.assertThrows(IllegalStateException.class, () -> storage.appendOutputStream(TEMPLATE, "../secret.txt"));
+    Assertions.assertThrows(IllegalStateException.class, () -> storage.newInputStream(TEMPLATE, "../secret.txt"));
+    Assertions.assertThrows(IllegalStateException.class, () -> storage.createFile(TEMPLATE, "../secret.txt"));
+    Assertions.assertThrows(IllegalStateException.class, () -> storage.createDirectory(TEMPLATE, "../secret"));
+    Assertions.assertThrows(IllegalStateException.class, () -> storage.hasFile(TEMPLATE, "../secret.txt"));
+    Assertions.assertThrows(IllegalStateException.class, () -> storage.deleteFile(TEMPLATE, "../secret.txt"));
+    Assertions.assertThrows(IllegalStateException.class, () -> storage.fileInfo(TEMPLATE, "../secret.txt"));
+    Assertions.assertThrows(IllegalStateException.class, () -> storage.listFiles(TEMPLATE, "../secret", false));
+  }
+
+  @Test
   @Order(110)
   void testTemplateDelete() {
     Assertions.assertTrue(storage.delete(TEMPLATE));
