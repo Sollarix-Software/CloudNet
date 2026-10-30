@@ -1,0 +1,3 @@
+## 2026-03-31 - Cache Pattern Compilation for RGB Console Color Processing
+**Learning:** `ConsoleColor` string formatting (`toColoredString` and `stripColor`) dynamically compiled regex patterns (`Pattern.compile(triggerChar + "#([\\da-fA-F]){6}")`) on every call. Pre-compiling the pattern for the default trigger character `&` and adding an early return check for `'#'` avoids expensive regex compilation and matcher overhead in hot path log/console formatting.
+**Action:** When working with string/color/format operations that use regex in hot paths, pre-compile patterns for common defaults and check for triggering characters before invoking regex engines.
