@@ -96,4 +96,24 @@ public final class ZipUtilTest {
     Assertions.assertTrue(Files.exists(TEST_DIR.resolve("nms/bukkit.yml")));
     Assertions.assertTrue(Files.exists(TEST_DIR.resolve("nms/server.properties")));
   }
+
+  @Test
+  void testExtractZipWithTraversalPathRejected() throws Exception {
+    var out = new ByteArrayOutputStream();
+    try (var zipOut = new java.util.zip.ZipOutputStream(out)) {
+      zipOut.putNextEntry(new java.util.zip.ZipEntry("../malicious.txt"));
+      zipOut.write("malicious content".getBytes(StandardCharsets.UTF_8));
+      zipOut.closeEntry();
+    }
+
+    var targetExtractDir = TEST_DIR.resolve("extract_target");
+    FileUtil.createDirectory(targetExtractDir);
+
+    try (var zipIn = new java.util.zip.ZipInputStream(new ByteArrayInputStream(out.toByteArray()))) {
+      Assertions.assertThrows(IllegalStateException.class, () -> ZipUtil.extractZipStream(zipIn, targetExtractDir));
+    }
+
+    // Verify the malicious file was not created outside target directory
+    Assertions.assertFalse(Files.exists(TEST_DIR.resolve("malicious.txt")));
+  }
 }

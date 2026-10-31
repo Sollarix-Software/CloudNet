@@ -241,6 +241,8 @@ public final class ZipUtil {
     // checks first if the zip entry name is malicious before extracting
     ensureSafeZipEntryName(zipEntry.getName());
     var file = targetDirectory.resolve(zipEntry.getName());
+    // defense-in-depth: ensure the resolved file path does not escape the target directory (zip slip protection)
+    FileUtil.ensureChild(targetDirectory, file);
 
     if (zipEntry.isDirectory()) {
       FileUtil.createDirectory(file);
