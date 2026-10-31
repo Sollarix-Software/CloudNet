@@ -18,10 +18,10 @@ package eu.cloudnetservice.utils.base.column;
 
 import com.google.common.base.Preconditions;
 import eu.cloudnetservice.utils.base.StringUtil;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 import lombok.NonNull;
 import org.jetbrains.annotations.Contract;
@@ -140,8 +140,9 @@ public final class ColumnFormatter {
           .append(this.columnRightBracket);
       }
 
-      // the result cache - it contains each row
-      List<String> result = new LinkedList<>();
+      // the result cache - it contains each row (header + separator + data rows)
+      var totalRows = entries[0].formattedEntries().length;
+      List<String> result = new ArrayList<>(totalRows + 2);
       result.add(builder.toString());
       // the second line is the spacer between the header and the entries
       result.add(StringUtil.repeat(this.headerValuesSpacerChar, builder.length()));
