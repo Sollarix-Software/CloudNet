@@ -17,6 +17,8 @@
 package eu.cloudnetservice.utils.base.column;
 
 import java.util.Arrays;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -56,6 +58,16 @@ public class RowedFormatterTest {
       "| 0utplayyyy | Player | world_the_end | 15 ");
 
     Assertions.assertIterableEquals(expectedLines, formattedLines);
+
+    // Test with non-List collection (Set)
+    var setEntries = new LinkedHashSet<>(Arrays.asList(entries));
+    var setFormattedLines = rowBasedFormatter.format(setEntries);
+    Assertions.assertIterableEquals(expectedLines, setFormattedLines);
+
+    // Test with non-RandomAccess List (LinkedList)
+    var linkedListEntries = new LinkedList<>(Arrays.asList(entries));
+    var linkedListFormattedLines = rowBasedFormatter.format(linkedListEntries);
+    Assertions.assertIterableEquals(expectedLines, linkedListFormattedLines);
   }
 
   private record Player(String name, String rank, String world, int hp) {

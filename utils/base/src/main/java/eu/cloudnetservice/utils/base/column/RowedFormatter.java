@@ -17,11 +17,12 @@
 package eu.cloudnetservice.utils.base.column;
 
 import com.google.common.base.Preconditions;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
+import java.util.RandomAccess;
 import java.util.function.Function;
 import lombok.NonNull;
 import org.jetbrains.annotations.Contract;
@@ -56,10 +57,13 @@ public record RowedFormatter<T>(
    * @return the prepared columns based on the given input data.
    * @throws NullPointerException if the given input data is null.
    */
+  @SuppressWarnings("unchecked")
   public @NonNull ColumnEntry[] convertToColumns(@NonNull Collection<T> input) {
     var result = new ColumnEntry[this.columns.size()];
-    // convert each
-    var contents = input instanceof List ? (List<T>) input : new LinkedList<>(input);
+    // convert each; ensure O(1) random-access lookup during formatting to avoid O(N^2) complexity with LinkedList
+    var contents = (input instanceof RandomAccess && input instanceof List<?> list)
+      ? (List<T>) list
+      : new ArrayList<>(input);
     for (var i = 0; i < this.columns.size(); i++) {
       var formatted = new String[input.size()];
       // format each input
@@ -122,7 +126,7 @@ public record RowedFormatter<T>(
   public static final class Builder<T> {
 
     private ColumnFormatter defaultFormatter;
-    private List<Function<T, Object>> columns = new LinkedList<>();
+    private List<Function<T, Object>> columns = new ArrayList<>();
 
     /**
      * Sets the default formatter for the columns.
@@ -147,7 +151,7 @@ public record RowedFormatter<T>(
      */
     @Contract(value = "_ -> this", pure = true)
     public @NonNull Builder<T> columns(@NonNull List<Function<T, Object>> columns) {
-      this.columns = new LinkedList<>(columns);
+      this.columns = new ArrayList<>(columns);
       return this;
     }
 
@@ -176,7 +180,7 @@ public record RowedFormatter<T>(
       Preconditions.checkNotNull(this.defaultFormatter, "no default formatter given");
       Preconditions.checkArgument(!this.columns.isEmpty(), "at least one column must be given");
 
-      return new RowedFormatter<>(this.defaultFormatter, new LinkedList<>(this.columns));
+      return new RowedFormatter<>(this.defaultFormatter, List.copyOf(this.columns));
     }
   }
 }
