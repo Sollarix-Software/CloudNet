@@ -16,6 +16,8 @@
 
 package eu.cloudnetservice.node.impl.console;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 import lombok.NonNull;
 import org.jetbrains.annotations.Nullable;
@@ -49,6 +51,10 @@ public enum ConsoleColor {
   private static final ConsoleColor[] VALUES = values();
   private static final String LOOKUP = "0123456789abcdefklmnor";
   private static final String RGB_ANSI = "\u001B[38;2;%d;%d;%dm";
+  // Pre-compiled pattern for the standard '&' trigger char to avoid repeated compilation and map lookup on every log line
+  private static final Pattern DEFAULT_RGB_PATTERN = Pattern.compile("&#([\\da-fA-F]){6}");
+  // Cached patterns for custom trigger characters
+  private static final Map<Character, Pattern> COMPILED_RGB_PATTERNS = new ConcurrentHashMap<>();
 
   private final String name;
   private final String ansiCode;
@@ -79,8 +85,17 @@ public enum ConsoleColor {
     return contentBuilder.toString();
   }
 
+  private static @NonNull Pattern rgbPattern(char triggerChar) {
+    if (triggerChar == '&') {
+      return DEFAULT_RGB_PATTERN;
+    }
+    return COMPILED_RGB_PATTERNS.computeIfAbsent(
+      triggerChar,
+      c -> Pattern.compile(Pattern.quote(Character.toString(c)) + "#([\\da-fA-F]){6}"));
+  }
+
   private static @NonNull String convertRGBColors(char triggerChar, @NonNull String input) {
-    var replacePattern = Pattern.compile(triggerChar + "#([\\da-fA-F]){6}");
+    var replacePattern = rgbPattern(triggerChar);
     return replacePattern.matcher(input).replaceAll(result -> {
       // we could use java.awt.Color but that would load unnecessary native libraries
       int hexInput = Integer.decode(result.group().substring(1));
@@ -103,7 +118,7 @@ public enum ConsoleColor {
   }
 
   private static @NonNull String stripRGBColors(char triggerChar, @NonNull String input) {
-    var replacePattern = Pattern.compile(triggerChar + "#([\\da-fA-F]){6}");
+    var replacePattern = rgbPattern(triggerChar);
     return replacePattern.matcher(input).replaceAll("");
   }
 
