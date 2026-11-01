@@ -21,7 +21,10 @@ import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -95,5 +98,26 @@ public final class ZipUtilTest {
     Assertions.assertTrue(Files.exists(TEST_DIR.resolve("bungee/config.yml")));
     Assertions.assertTrue(Files.exists(TEST_DIR.resolve("nms/bukkit.yml")));
     Assertions.assertTrue(Files.exists(TEST_DIR.resolve("nms/server.properties")));
+  }
+
+  @Test
+  void testExtractZipSlipRejected() throws Exception {
+    var out = new ByteArrayOutputStream();
+    try (var zos = new ZipOutputStream(out, StandardCharsets.UTF_8)) {
+      zos.putNextEntry(new ZipEntry("../traversal.txt"));
+      zos.write("malicious payload".getBytes(StandardCharsets.UTF_8));
+      zos.closeEntry();
+    }
+
+    var targetExtractDir = TEST_DIR.resolve("extract_target");
+    FileUtil.createDirectory(targetExtractDir);
+
+    try (var zis = new ZipInputStream(new ByteArrayInputStream(out.toByteArray()), StandardCharsets.UTF_8)) {
+      var result = ZipUtil.extractZipStream(zis, targetExtractDir);
+      // Extraction fails safely (returns null) when encountering path traversal entry
+      Assertions.assertNull(result);
+    }
+
+    Assertions.assertFalse(Files.exists(TEST_DIR.resolve("traversal.txt")));
   }
 }
