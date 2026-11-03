@@ -1,0 +1,3 @@
+## 2026-03-31 - Cache regex pattern compilation in ConsoleColor and add fast-path checks
+**Learning:** `ConsoleColor.toColoredString` and `ConsoleColor.stripColor` are executed on console outputs and line formatting. Calling `Pattern.compile` per invocation causes substantial regex compilation overhead, and running regex replacement on strings with no trigger character (`&`) or RGB hex prefix (`#`) adds unnecessary string allocations and traversals.
+**Action:** Cache compiled `Pattern` instances per trigger char and add fast paths with `indexOf` checks before executing regex replacements or string builders.
