@@ -63,10 +63,15 @@ public enum ConsoleColor {
   }
 
   public static @NonNull String toColoredString(char triggerChar, @NonNull String input) {
-    var contentBuilder = new StringBuilder(convertRGBColors(triggerChar, input));
+    var rgbConverted = convertRGBColors(triggerChar, input);
+    var firstTrigger = rgbConverted.indexOf(triggerChar);
+    if (firstTrigger == -1) {
+      return rgbConverted;
+    }
 
+    var contentBuilder = new StringBuilder(rgbConverted);
     var breakIndex = contentBuilder.length() - 1;
-    for (var i = 0; i < breakIndex; i++) {
+    for (var i = firstTrigger; i < breakIndex; i++) {
       if (contentBuilder.charAt(i) == triggerChar) {
         var format = LOOKUP.indexOf(contentBuilder.charAt(i + 1));
         if (format != -1) {
@@ -102,10 +107,15 @@ public enum ConsoleColor {
   }
 
   public static @NonNull String stripColor(char triggerChar, @NonNull String input) {
-    var contentBuilder = new StringBuilder(stripRGBColors(triggerChar, input));
+    var rgbStripped = stripRGBColors(triggerChar, input);
+    var firstTrigger = rgbStripped.indexOf(triggerChar);
+    if (firstTrigger == -1) {
+      return rgbStripped;
+    }
 
+    var contentBuilder = new StringBuilder(rgbStripped);
     var breakIndex = contentBuilder.length() - 1;
-    for (var i = 0; i < breakIndex; i++) {
+    for (var i = firstTrigger; i < breakIndex; i++) {
       if (contentBuilder.charAt(i) == triggerChar && LOOKUP.indexOf(contentBuilder.charAt(i + 1)) != -1) {
         contentBuilder.delete(i, i + 2);
         breakIndex -= 2;
