@@ -47,8 +47,19 @@ public enum ConsoleColor {
   DEFAULT("default", 'r', Ansi.ansi().reset().toString());
 
   private static final ConsoleColor[] VALUES = values();
-  private static final String LOOKUP = "0123456789abcdefklmnor";
+  private static final ConsoleColor[] BY_CHAR = new ConsoleColor[128];
+
+  static {
+    for (var color : VALUES) {
+      if (color.index < 128) {
+        BY_CHAR[color.index] = color;
+      }
+    }
+  }
+
   private static final String RGB_ANSI = "\u001B[38;2;%d;%d;%dm";
+  // Pre-compiled pattern for the standard trigger char '&' to avoid recompiling on every log/console line
+  private static final Pattern DEFAULT_RGB_PATTERN = Pattern.compile("&#([\\da-fA-F]){6}");
 
   private final String name;
   private final String ansiCode;
@@ -61,15 +72,19 @@ public enum ConsoleColor {
   }
 
   public static @NonNull String toColoredString(char triggerChar, @NonNull String input) {
-    var contentBuilder = new StringBuilder(convertRGBColors(triggerChar, input));
+    var rgbConverted = convertRGBColors(triggerChar, input);
+    var firstTrigger = rgbConverted.indexOf(triggerChar);
+    if (firstTrigger == -1) {
+      return rgbConverted;
+    }
 
+    var contentBuilder = new StringBuilder(rgbConverted);
     var breakIndex = contentBuilder.length() - 1;
-    for (var i = 0; i < breakIndex; i++) {
-      if (contentBuilder.charAt(i) == triggerChar) {
-        var format = LOOKUP.indexOf(contentBuilder.charAt(i + 1));
-        if (format != -1) {
-          var ansiCode = VALUES[format].ansiCode();
-
+    for (var i = firstTrigger; i < breakIndex; i++) {
+      if (contentBuilder.charAt(i) == triggerChar && i + 1 <= breakIndex) {
+        var color = byChar(contentBuilder.charAt(i + 1));
+        if (color != null) {
+          var ansiCode = color.ansiCode();
           contentBuilder.delete(i, i + 2).insert(i, ansiCode);
           breakIndex += ansiCode.length() - 2;
         }
@@ -79,8 +94,19 @@ public enum ConsoleColor {
     return contentBuilder.toString();
   }
 
+  private static @NonNull Pattern rgbPattern(char triggerChar) {
+    // Fast path: use the pre-compiled pattern for the default '&' trigger char
+    return triggerChar == '&' ? DEFAULT_RGB_PATTERN : Pattern.compile(Pattern.quote(String.valueOf(triggerChar)) + "#([\\da-fA-F]){6}");
+  }
+
   private static @NonNull String convertRGBColors(char triggerChar, @NonNull String input) {
-    var replacePattern = Pattern.compile(triggerChar + "#([\\da-fA-F]){6}");
+    // Fast path: skip regex matching if input does not contain triggerChar followed by '#'
+    var triggerHashIndex = input.indexOf(triggerChar);
+    if (triggerHashIndex == -1 || input.indexOf('#', triggerHashIndex) == -1) {
+      return input;
+    }
+
+    var replacePattern = rgbPattern(triggerChar);
     return replacePattern.matcher(input).replaceAll(result -> {
       // we could use java.awt.Color but that would load unnecessary native libraries
       int hexInput = Integer.decode(result.group().substring(1));
@@ -89,13 +115,20 @@ public enum ConsoleColor {
   }
 
   public static @NonNull String stripColor(char triggerChar, @NonNull String input) {
-    var contentBuilder = new StringBuilder(stripRGBColors(triggerChar, input));
+    var rgbStripped = stripRGBColors(triggerChar, input);
+    var firstTrigger = rgbStripped.indexOf(triggerChar);
+    if (firstTrigger == -1) {
+      return rgbStripped;
+    }
 
+    var contentBuilder = new StringBuilder(rgbStripped);
     var breakIndex = contentBuilder.length() - 1;
-    for (var i = 0; i < breakIndex; i++) {
-      if (contentBuilder.charAt(i) == triggerChar && LOOKUP.indexOf(contentBuilder.charAt(i + 1)) != -1) {
-        contentBuilder.delete(i, i + 2);
-        breakIndex -= 2;
+    for (var i = firstTrigger; i < breakIndex; i++) {
+      if (contentBuilder.charAt(i) == triggerChar && i + 1 <= breakIndex) {
+        if (byChar(contentBuilder.charAt(i + 1)) != null) {
+          contentBuilder.delete(i, i + 2);
+          breakIndex -= 2;
+        }
       }
     }
 
@@ -103,18 +136,18 @@ public enum ConsoleColor {
   }
 
   private static @NonNull String stripRGBColors(char triggerChar, @NonNull String input) {
-    var replacePattern = Pattern.compile(triggerChar + "#([\\da-fA-F]){6}");
+    // Fast path: skip regex matching if input does not contain triggerChar followed by '#'
+    var triggerHashIndex = input.indexOf(triggerChar);
+    if (triggerHashIndex == -1 || input.indexOf('#', triggerHashIndex) == -1) {
+      return input;
+    }
+
+    var replacePattern = rgbPattern(triggerChar);
     return replacePattern.matcher(input).replaceAll("");
   }
 
   public static @Nullable ConsoleColor byChar(char index) {
-    for (var color : VALUES) {
-      if (color.index == index) {
-        return color;
-      }
-    }
-
-    return null;
+    return index < 128 ? BY_CHAR[index] : null;
   }
 
   public static @Nullable ConsoleColor lastColor(char triggerChar, @NonNull String text) {
