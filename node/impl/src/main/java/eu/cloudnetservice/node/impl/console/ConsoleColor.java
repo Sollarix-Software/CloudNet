@@ -87,6 +87,12 @@ public enum ConsoleColor {
   }
 
   private static @NonNull String convertRGBColors(char triggerChar, @NonNull String input) {
+    // Fast path: skip regex matching if input does not contain triggerChar followed by '#'
+    var triggerHashIndex = input.indexOf(triggerChar);
+    if (triggerHashIndex == -1 || input.indexOf('#', triggerHashIndex) == -1) {
+      return input;
+    }
+
     var replacePattern = rgbPattern(triggerChar);
     return replacePattern.matcher(input).replaceAll(result -> {
       // we could use java.awt.Color but that would load unnecessary native libraries
@@ -110,6 +116,12 @@ public enum ConsoleColor {
   }
 
   private static @NonNull String stripRGBColors(char triggerChar, @NonNull String input) {
+    // Fast path: skip regex matching if input does not contain triggerChar followed by '#'
+    var triggerHashIndex = input.indexOf(triggerChar);
+    if (triggerHashIndex == -1 || input.indexOf('#', triggerHashIndex) == -1) {
+      return input;
+    }
+
     var replacePattern = rgbPattern(triggerChar);
     return replacePattern.matcher(input).replaceAll("");
   }
