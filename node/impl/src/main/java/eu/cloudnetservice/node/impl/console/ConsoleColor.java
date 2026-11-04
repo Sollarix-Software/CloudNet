@@ -47,7 +47,16 @@ public enum ConsoleColor {
   DEFAULT("default", 'r', Ansi.ansi().reset().toString());
 
   private static final ConsoleColor[] VALUES = values();
-  private static final String LOOKUP = "0123456789abcdefklmnor";
+  private static final ConsoleColor[] BY_CHAR = new ConsoleColor[128];
+
+  static {
+    for (var color : VALUES) {
+      if (color.index < 128) {
+        BY_CHAR[color.index] = color;
+      }
+    }
+  }
+
   private static final String RGB_ANSI = "\u001B[38;2;%d;%d;%dm";
   // Pre-compiled pattern for the standard trigger char '&' to avoid recompiling on every log/console line
   private static final Pattern DEFAULT_RGB_PATTERN = Pattern.compile("&#([\\da-fA-F]){6}");
@@ -72,11 +81,10 @@ public enum ConsoleColor {
     var contentBuilder = new StringBuilder(rgbConverted);
     var breakIndex = contentBuilder.length() - 1;
     for (var i = firstTrigger; i < breakIndex; i++) {
-      if (contentBuilder.charAt(i) == triggerChar) {
-        var format = LOOKUP.indexOf(contentBuilder.charAt(i + 1));
-        if (format != -1) {
-          var ansiCode = VALUES[format].ansiCode();
-
+      if (contentBuilder.charAt(i) == triggerChar && i + 1 <= breakIndex) {
+        var color = byChar(contentBuilder.charAt(i + 1));
+        if (color != null) {
+          var ansiCode = color.ansiCode();
           contentBuilder.delete(i, i + 2).insert(i, ansiCode);
           breakIndex += ansiCode.length() - 2;
         }
@@ -116,9 +124,11 @@ public enum ConsoleColor {
     var contentBuilder = new StringBuilder(rgbStripped);
     var breakIndex = contentBuilder.length() - 1;
     for (var i = firstTrigger; i < breakIndex; i++) {
-      if (contentBuilder.charAt(i) == triggerChar && LOOKUP.indexOf(contentBuilder.charAt(i + 1)) != -1) {
-        contentBuilder.delete(i, i + 2);
-        breakIndex -= 2;
+      if (contentBuilder.charAt(i) == triggerChar && i + 1 <= breakIndex) {
+        if (byChar(contentBuilder.charAt(i + 1)) != null) {
+          contentBuilder.delete(i, i + 2);
+          breakIndex -= 2;
+        }
       }
     }
 
@@ -137,13 +147,7 @@ public enum ConsoleColor {
   }
 
   public static @Nullable ConsoleColor byChar(char index) {
-    for (var color : VALUES) {
-      if (color.index == index) {
-        return color;
-      }
-    }
-
-    return null;
+    return index < 128 ? BY_CHAR[index] : null;
   }
 
   public static @Nullable ConsoleColor lastColor(char triggerChar, @NonNull String text) {
