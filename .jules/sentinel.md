@@ -1,0 +1,4 @@
+## 2026-11-05 - Zip Slip Path Traversal Protection Defense in Depth
+**Vulnerability:** Zip extraction utilities often rely solely on string-based path checks (such as entry name filtering) which may fail against edge cases or non-canonical paths, risking Zip Slip path traversal.
+**Learning:** In addition to entry name pattern validation, validating that the resolved absolute path is actually a child of the target extraction directory (`FileUtil.ensureChild(targetDirectory, file)`) provides robust defense-in-depth. Catching unexpected runtime exceptions like `IllegalStateException` during stream unzipping ensures extraction fails cleanly and safely.
+**Prevention:** Always pair input string validation with post-resolve containment verification (`FileUtil.ensureChild`) when dealing with archive entries or untrusted file paths.
