@@ -1,0 +1,4 @@
+## 2025-05-18 - Zip Extraction Path Traversal Validation
+**Vulnerability:** In `UnzipStepExecutor`, relative path resolution checks were using `!targetPath.normalize().startsWith(workingDirectory)`. When `targetPath` was relative or resolved with special paths (such as empty zip entry names or paths starting with `/`), this check could be circumvented or fail to prevent escaping the root working directory.
+**Learning:** Checking `Path.startsWith` on relative paths without first normalizing to absolute paths and checking segment counts can lead to traversal flaws or false positives/negatives. The project provides `FileUtil.ensureChild(root, child)` which checks `toAbsolutePath()`, `normalize()`, and ensures `childNormal.getNameCount() > rootNormal.getNameCount()`.
+**Prevention:** Always use `FileUtil.ensureChild(root, child)` for verifying that any resolved child path is strictly contained within the intended root directory.
