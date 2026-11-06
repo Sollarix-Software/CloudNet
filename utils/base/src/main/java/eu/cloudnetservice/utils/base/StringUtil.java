@@ -18,7 +18,6 @@ package eu.cloudnetservice.utils.base;
 
 import com.google.common.base.Preconditions;
 import java.security.SecureRandom;
-import java.util.Arrays;
 import java.util.Locale;
 import java.util.Random;
 import lombok.NonNull;
