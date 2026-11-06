@@ -54,4 +54,12 @@ public class StringUtilTest {
 
     Assertions.assertEquals(repeated.length(), length);
   }
+
+  @org.junit.jupiter.api.Test
+  void testRepeatEdgeCases() {
+    Assertions.assertEquals("", StringUtil.repeat('a', 0));
+    Assertions.assertEquals("a", StringUtil.repeat('a', 1));
+    Assertions.assertEquals("aaaaa", StringUtil.repeat('a', 5));
+    Assertions.assertThrows(IllegalArgumentException.class, () -> StringUtil.repeat('a', -1));
+  }
 }

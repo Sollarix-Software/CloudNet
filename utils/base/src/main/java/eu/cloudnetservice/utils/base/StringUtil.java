@@ -18,7 +18,6 @@ package eu.cloudnetservice.utils.base;
 
 import com.google.common.base.Preconditions;
 import java.security.SecureRandom;
-import java.util.Arrays;
 import java.util.Locale;
 import java.util.Random;
 import lombok.NonNull;
@@ -129,9 +128,8 @@ public final class StringUtil {
       return Character.toString(c);
     }
 
-    // fill an array with the required amount of reputations and construct a new string from that.
-    var s = new char[times];
-    Arrays.fill(s, c);
-    return new String(s);
+    // Optimization: String.repeat() directly delegates to JVM-intrinsic array copying / compact string
+    // byte-level filling, avoiding redundant intermediate char[] allocation and copy.
+    return Character.toString(c).repeat(times);
   }
 }
