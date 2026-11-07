@@ -131,7 +131,7 @@ public class LocalTemplateStorage implements TemplateStorage {
     @NonNull ServiceTemplate template,
     @NonNull String path
   ) throws IOException {
-    var filePath = this.getTemplatePath(template).resolve(path);
+    var filePath = this.resolveChildPath(template, path);
     if (Files.notExists(filePath)) {
       Files.createDirectories(filePath.getParent());
     }
@@ -144,7 +144,7 @@ public class LocalTemplateStorage implements TemplateStorage {
     @NonNull ServiceTemplate template,
     @NonNull String path
   ) throws IOException {
-    var filePath = this.getTemplatePath(template).resolve(path);
+    var filePath = this.resolveChildPath(template, path);
     if (Files.notExists(filePath)) {
       Files.createDirectories(filePath.getParent());
     }
@@ -154,7 +154,7 @@ public class LocalTemplateStorage implements TemplateStorage {
 
   @Override
   public boolean createFile(@NonNull ServiceTemplate template, @NonNull String path) {
-    var filePath = this.getTemplatePath(template).resolve(path);
+    var filePath = this.resolveChildPath(template, path);
     if (Files.exists(filePath)) {
       return false;
     } else {
@@ -170,7 +170,7 @@ public class LocalTemplateStorage implements TemplateStorage {
 
   @Override
   public boolean createDirectory(@NonNull ServiceTemplate template, @NonNull String path) {
-    var dirPath = this.getTemplatePath(template).resolve(path);
+    var dirPath = this.resolveChildPath(template, path);
     if (Files.exists(dirPath)) {
       return false;
     } else {
@@ -181,12 +181,12 @@ public class LocalTemplateStorage implements TemplateStorage {
 
   @Override
   public boolean hasFile(@NonNull ServiceTemplate template, @NonNull String path) {
-    return Files.exists(this.getTemplatePath(template).resolve(path));
+    return Files.exists(this.resolveChildPath(template, path));
   }
 
   @Override
   public boolean deleteFile(@NonNull ServiceTemplate template, @NonNull String path) {
-    var filePath = this.getTemplatePath(template).resolve(path);
+    var filePath = this.resolveChildPath(template, path);
     if (Files.exists(filePath) && !Files.isDirectory(filePath)) {
       FileUtil.delete(filePath);
       return true;
@@ -200,14 +200,14 @@ public class LocalTemplateStorage implements TemplateStorage {
     @NonNull ServiceTemplate template,
     @NonNull String path
   ) throws IOException {
-    var filePath = this.getTemplatePath(template).resolve(path);
+    var filePath = this.resolveChildPath(template, path);
     return Files.notExists(filePath) || Files.isDirectory(filePath) ? null : Files.newInputStream(filePath);
   }
 
   @Override
   public @Nullable FileInfo fileInfo(@NonNull ServiceTemplate template, @NonNull String path) {
     try {
-      var filePath = this.getTemplatePath(template).resolve(path);
+      var filePath = this.resolveChildPath(template, path);
       return Files.exists(filePath) ? FileInfo.of(filePath, Path.of(path)) : null;
     } catch (IOException exception) {
       return null;
@@ -222,8 +222,9 @@ public class LocalTemplateStorage implements TemplateStorage {
   ) {
     List<FileInfo> out = new ArrayList<>();
     var root = this.getTemplatePath(template);
+    var targetDir = dir.isEmpty() ? root : this.resolveChildPath(template, dir);
     // walk over all files
-    FileUtil.walkFileTree(root.resolve(dir), (parent, file) -> {
+    FileUtil.walkFileTree(targetDir, (parent, file) -> {
       try {
         out.add(FileInfo.of(file, root.relativize(file)));
       } catch (IOException ignored) {
@@ -385,5 +386,12 @@ public class LocalTemplateStorage implements TemplateStorage {
 
   protected @NonNull Path getTemplatePath(@NonNull ServiceTemplate template) {
     return this.storageDirectory.resolve(template.prefix()).resolve(template.name());
+  }
+
+  private @NonNull Path resolveChildPath(@NonNull ServiceTemplate template, @NonNull String path) {
+    var templatePath = this.getTemplatePath(template);
+    var resolvedPath = templatePath.resolve(path);
+    FileUtil.ensureChild(templatePath, resolvedPath);
+    return resolvedPath;
   }
 }
