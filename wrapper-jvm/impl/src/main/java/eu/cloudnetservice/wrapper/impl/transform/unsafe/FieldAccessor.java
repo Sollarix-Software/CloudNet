@@ -36,7 +36,7 @@ final class FieldAccessor {
 
   private final Class<?> fieldType;
   private final ValueTypeKind kind;
-  private final WeakReference<Field> fieldRef;
+  private final Field field;
 
   private final VarHandle varHandle;
   private final MethodHandle putMethodHandle; // null if VarHandle can support set (field is not trusted final)
@@ -51,7 +51,7 @@ final class FieldAccessor {
   private FieldAccessor(@NonNull Field field) throws ReflectiveOperationException {
     this.fieldType = field.getType();
     this.kind = ValueTypeKind.of(this.fieldType);
-    this.fieldRef = new WeakReference<>(field);
+    this.field = field;
 
     // resolve field var handle, add leading dummy Object argument for static handles (easier calling later)
     var lookup = OpConstants.TRUSTED_LOOKUP.get();
@@ -300,7 +300,7 @@ final class FieldAccessor {
    * @return the field that was used to create this accessor.
    */
   @VisibleForTesting
-  public @Nullable Field wrappedField() {
-    return this.fieldRef.get();
+  public @NonNull Field wrappedField() {
+    return this.field;
   }
 }
