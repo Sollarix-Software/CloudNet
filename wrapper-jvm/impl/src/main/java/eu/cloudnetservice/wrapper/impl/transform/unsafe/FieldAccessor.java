@@ -19,6 +19,7 @@ package eu.cloudnetservice.wrapper.impl.transform.unsafe;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
+import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.function.Function;
@@ -35,7 +36,7 @@ final class FieldAccessor {
 
   private final Class<?> fieldType;
   private final ValueTypeKind kind;
-  private final Field field;
+  private final WeakReference<Field> fieldRef;
 
   private final VarHandle varHandle;
   private final MethodHandle putMethodHandle; // null if VarHandle can support set (field is not trusted final)
@@ -50,7 +51,7 @@ final class FieldAccessor {
   private FieldAccessor(@NonNull Field field) throws ReflectiveOperationException {
     this.fieldType = field.getType();
     this.kind = ValueTypeKind.of(this.fieldType);
-    this.field = field;
+    this.fieldRef = new WeakReference<>(field);
 
     // resolve field var handle, add leading dummy Object argument for static handles (easier calling later)
     var lookup = OpConstants.TRUSTED_LOOKUP.get();
@@ -299,7 +300,7 @@ final class FieldAccessor {
    * @return the field that was used to create this accessor.
    */
   @VisibleForTesting
-  public @NonNull Field wrappedField() {
-    return this.field;
+  public @Nullable Field wrappedField() {
+    return this.fieldRef.get();
   }
 }
