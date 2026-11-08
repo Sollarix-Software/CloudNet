@@ -21,7 +21,10 @@ import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -74,8 +77,7 @@ public final class ZipUtilTest {
       Assertions.assertEquals("Info message :3", out.toString(StandardCharsets.UTF_8));
     }
 
-    FileUtil.delete(TEST_DIR);
-    Assertions.assertFalse(Files.exists(TEST_DIR));
+    FileUtil.delete(zipFilePath);
   }
 
   @Test
@@ -95,5 +97,23 @@ public final class ZipUtilTest {
     Assertions.assertTrue(Files.exists(TEST_DIR.resolve("bungee/config.yml")));
     Assertions.assertTrue(Files.exists(TEST_DIR.resolve("nms/bukkit.yml")));
     Assertions.assertTrue(Files.exists(TEST_DIR.resolve("nms/server.properties")));
+  }
+
+  @Test
+  void testExtractMaliciousZipRejection() throws Exception {
+    var maliciousZipPath = TEST_DIR.resolve("malicious.zip");
+
+    try (var zos = new ZipOutputStream(Files.newOutputStream(maliciousZipPath), StandardCharsets.UTF_8)) {
+      zos.putNextEntry(new ZipEntry("../traversal.txt"));
+      zos.write("malicious payload".getBytes(StandardCharsets.UTF_8));
+      zos.closeEntry();
+    }
+
+    var extractDir = TEST_DIR.resolve("extract_target");
+    FileUtil.createDirectory(extractDir);
+
+    try (var zis = new ZipInputStream(Files.newInputStream(maliciousZipPath), StandardCharsets.UTF_8)) {
+      Assertions.assertThrows(IllegalStateException.class, () -> ZipUtil.extractZipStream(zis, extractDir));
+    }
   }
 }
