@@ -1,0 +1,4 @@
+## 2026-03-31 - Enforce Path Traversal Protection via FileUtil.ensureChild During Zip Extraction
+**Vulnerability:** In `ZipUtil.extractEntry`, zip entry names were checked using string-based conditions in `ensureSafeZipEntryName`, but the resolved target path (`targetDirectory.resolve(entry.getName())`) was not validated against `targetDirectory` using `FileUtil.ensureChild(targetDirectory, file)` prior to writing files or directories.
+**Learning:** String-based heuristics alone for zip entry names can miss platform-specific path variations or unexpected resolution behavior. CloudNet provides `FileUtil.ensureChild(root, child)` across the codebase to strictly ensure that resolved child paths stay strictly within the expected parent hierarchy.
+**Prevention:** Always pair input name sanitization with normalized path boundary validation using `FileUtil.ensureChild(root, child)` before performing filesystem writes when extracting untrusted archives.
