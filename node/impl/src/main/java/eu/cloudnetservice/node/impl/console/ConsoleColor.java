@@ -49,6 +49,9 @@ public enum ConsoleColor {
   private static final ConsoleColor[] VALUES = values();
   private static final String LOOKUP = "0123456789abcdefklmnor";
   private static final String RGB_ANSI = "\u001B[38;2;%d;%d;%dm";
+  // Bolt optimization: precompile pattern for the default and predominantly used '&' trigger character
+  // to avoid compiling a new Pattern on every single call to toColoredString and stripColor.
+  private static final Pattern DEFAULT_RGB_PATTERN = Pattern.compile("&#([\\da-fA-F]){6}");
 
   private final String name;
   private final String ansiCode;
@@ -80,7 +83,12 @@ public enum ConsoleColor {
   }
 
   private static @NonNull String convertRGBColors(char triggerChar, @NonNull String input) {
-    var replacePattern = Pattern.compile(triggerChar + "#([\\da-fA-F]){6}");
+    // Bolt optimization: fast exit when no '#' is in the input, skipping regex matching entirely
+    if (input.indexOf('#') == -1) {
+      return input;
+    }
+
+    var replacePattern = rgbPattern(triggerChar);
     return replacePattern.matcher(input).replaceAll(result -> {
       // we could use java.awt.Color but that would load unnecessary native libraries
       int hexInput = Integer.decode(result.group().substring(1));
@@ -103,8 +111,17 @@ public enum ConsoleColor {
   }
 
   private static @NonNull String stripRGBColors(char triggerChar, @NonNull String input) {
-    var replacePattern = Pattern.compile(triggerChar + "#([\\da-fA-F]){6}");
+    // Bolt optimization: fast exit when no '#' is in the input, skipping regex matching entirely
+    if (input.indexOf('#') == -1) {
+      return input;
+    }
+
+    var replacePattern = rgbPattern(triggerChar);
     return replacePattern.matcher(input).replaceAll("");
+  }
+
+  private static @NonNull Pattern rgbPattern(char triggerChar) {
+    return triggerChar == '&' ? DEFAULT_RGB_PATTERN : Pattern.compile(triggerChar + "#([\\da-fA-F]){6}");
   }
 
   public static @Nullable ConsoleColor byChar(char index) {
