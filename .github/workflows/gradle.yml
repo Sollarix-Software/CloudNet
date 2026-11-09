@@ -16,6 +16,11 @@ jobs:
     runs-on: ubuntu-latest
     name: Build and publish
 
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
