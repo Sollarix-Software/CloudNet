@@ -16,6 +16,8 @@
 
 package eu.cloudnetservice.node.impl.console;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 import lombok.NonNull;
 import org.jetbrains.annotations.Nullable;
@@ -49,6 +51,8 @@ public enum ConsoleColor {
   private static final ConsoleColor[] VALUES = values();
   private static final String LOOKUP = "0123456789abcdefklmnor";
   private static final String RGB_ANSI = "\u001B[38;2;%d;%d;%dm";
+  // Cache compiled RGB patterns per trigger character to avoid expensive recompilation on every console message
+  private static final Map<Character, Pattern> RGB_PATTERNS = new ConcurrentHashMap<>();
 
   private final String name;
   private final String ansiCode;
@@ -79,9 +83,19 @@ public enum ConsoleColor {
     return contentBuilder.toString();
   }
 
+  private static @NonNull Pattern rgbPattern(char triggerChar) {
+    return RGB_PATTERNS.computeIfAbsent(
+      triggerChar,
+      c -> Pattern.compile(Pattern.quote(Character.toString(c)) + "#([\\da-fA-F]){6}"));
+  }
+
   private static @NonNull String convertRGBColors(char triggerChar, @NonNull String input) {
-    var replacePattern = Pattern.compile(triggerChar + "#([\\da-fA-F]){6}");
-    return replacePattern.matcher(input).replaceAll(result -> {
+    // Fast path: if triggerChar or '#' is not present, no RGB colors need conversion
+    if (input.indexOf(triggerChar) == -1 || input.indexOf('#') == -1) {
+      return input;
+    }
+
+    return rgbPattern(triggerChar).matcher(input).replaceAll(result -> {
       // we could use java.awt.Color but that would load unnecessary native libraries
       int hexInput = Integer.decode(result.group().substring(1));
       return String.format(RGB_ANSI, (hexInput >> 16) & 0xFF, (hexInput >> 8) & 0xFF, hexInput & 0xFF);
@@ -103,8 +117,12 @@ public enum ConsoleColor {
   }
 
   private static @NonNull String stripRGBColors(char triggerChar, @NonNull String input) {
-    var replacePattern = Pattern.compile(triggerChar + "#([\\da-fA-F]){6}");
-    return replacePattern.matcher(input).replaceAll("");
+    // Fast path: if triggerChar or '#' is not present, no RGB colors need stripping
+    if (input.indexOf(triggerChar) == -1 || input.indexOf('#') == -1) {
+      return input;
+    }
+
+    return rgbPattern(triggerChar).matcher(input).replaceAll("");
   }
 
   public static @Nullable ConsoleColor byChar(char index) {
