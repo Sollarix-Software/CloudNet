@@ -16,7 +16,6 @@
 
 package eu.cloudnetservice.utils.base.io;
 
-import eu.cloudnetservice.utils.base.StringUtil;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -47,7 +46,6 @@ import org.slf4j.LoggerFactory;
 public final class ZipUtil {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ZipUtil.class);
-  private static final boolean IS_WINDOWS = StringUtil.toLower(System.getProperty("os.name")).contains("windows");
 
   private ZipUtil() {
     throw new UnsupportedOperationException();
@@ -238,9 +236,9 @@ public final class ZipUtil {
     @NonNull ZipEntry zipEntry,
     @NonNull Path targetDirectory
   ) throws IOException {
-    // checks first if the zip entry name is malicious before extracting
-    ensureSafeZipEntryName(zipEntry.getName());
     var file = targetDirectory.resolve(zipEntry.getName());
+    // ensure resolved path is strictly contained within target directory to prevent zip-slip attacks
+    FileUtil.ensureChild(targetDirectory, file);
 
     if (zipEntry.isDirectory()) {
       FileUtil.createDirectory(file);
@@ -249,24 +247,6 @@ public final class ZipUtil {
       try (var outputStream = Files.newOutputStream(file)) {
         FileUtil.copy(in, outputStream);
       }
-    }
-  }
-
-  /**
-   * Ensures that the given name does not contain any characters that might lead to path traversal or other malicious
-   * behavior.
-   *
-   * @param name the name to check.
-   * @throws NullPointerException  if the given name is null.
-   * @throws IllegalStateException if the name contains an illegal character.
-   */
-  private static void ensureSafeZipEntryName(@NonNull String name) {
-    if (name.isEmpty()
-      || name.startsWith("/")
-      || name.startsWith("\\")
-      || name.contains("..")
-      || (name.contains(":") && IS_WINDOWS)) {
-      throw new IllegalStateException(String.format("zip entry name %s contains unsafe characters", name));
     }
   }
 }
