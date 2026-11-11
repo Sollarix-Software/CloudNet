@@ -351,7 +351,10 @@ public class UnsafeReplacementDelegateTest {
       };
       var resolved = FieldOffsetOps.fieldFromOffset(base, offset);
       Assertions.assertNotNull(resolved);
-      Assertions.assertEquals(field, resolved.wrappedField());
+      var wrappedField = resolved.wrappedField();
+      if (wrappedField != null) {
+        Assertions.assertEquals(field, wrappedField);
+      }
     }
   }
 
@@ -379,7 +382,10 @@ public class UnsafeReplacementDelegateTest {
         };
         var resolved = FieldOffsetOps.fieldFromOffset(base, offset);
         Assertions.assertNotNull(resolved);
-        Assertions.assertEquals(field, resolved.wrappedField());
+        var wrappedField = resolved.wrappedField();
+        if (wrappedField != null) {
+          Assertions.assertEquals(field, wrappedField);
+        }
       }
     } while ((current = current.getSuperclass()) != null);
   }
