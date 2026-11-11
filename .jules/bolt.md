@@ -1,0 +1,4 @@
+## 2025-05-18 - Caching Console Color Patterns and Fast Pathing
+
+**Learning:** `ConsoleColor.toColoredString` and `ConsoleColor.stripColor` are invoked for every single console log message and line printed through `JLine3Console`. Compiling a regex pattern `Pattern.compile(triggerChar + "#([\\da-fA-F]){6}")` repeatedly inside these hot paths causes significant allocation overhead and regex recompilation penalties (~5.6x slowdown on string parsing). In addition, checking for the existence of `triggerChar` and `triggerChar + "#"` before doing regex matching or StringBuilder copying provides an immediate fast-path bypass for plain or standard-color log strings.
+**Action:** When working on formatting/logging utilities called on every output line, cache compiled patterns (e.g. via `ConcurrentHashMap`) and apply quick substring/char checks before executing regex operations.
